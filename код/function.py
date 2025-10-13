@@ -2,7 +2,11 @@ import keyboard
 import numpy as np
 from keyboard import (keyboard_finger_qwerty,
                       keyboard_finger_qwerty_dop,
-                      qwerty_finger_count)
+                      qwerty_finger_count,
+                      key_grid,
+                      valid_keys,
+                      ignore_chars,
+                      key_to_home_finger)
 
 def find_finger(character, keyboard_layout):
     # 1. Ищем в основной раскладке
@@ -77,4 +81,86 @@ def clicks(layout_1, layout_2, layout_3, layout_4):
     fing_d_qwerty = dict(zip(fing, layout_1))
     return fing_d_qwerty
 
+def calculate_penalties(text):
+    """
+    Подсчитывает штрафы для русского текста.
+    Штрафы начисляются за перемещение пальца от домашней клавиши.
+    """
+    penalties = 0
+    prev_key = None
+    prev_pos = None
+    prev_finger = None
+
+    for char in text.lower():
+        if char in ignore_chars:
+            continue
+
+        if char not in valid_keys:
+            continue  # Пропускаем неизвестные символы
+
+        current_key = char
+        current_pos = key_grid[char]
+
+        # Определяем, какой палец должен был нажать эту клавишу
+        # Если клавиша — из домашней строки, то палец «домашний»
+        # Если нет — определяем, с какой домашней клавиши он пришёл
+        # каждый символ набирается с ближайшей домашней клавиши
+        # если клавиша не из домашней строки — она набирается с ближайшей домашней
+        # и это движение засчитывается как штраф.
+
+        # Определим, какой домашний палец отвечает за эту клавишу
+        # один и тот же палец работает в одном вертикальном столбце
+
+        col = current_pos[0]
+        row = current_pos[1]
+
+        # Сопоставим столбцы с домашними пальцами
+        # Левая рука: столбцы 0–3 → пальцы от Ф до А
+        # Правая рука: столбцы 4–7 → пальцы от П до Л
+        # Столбцы 8–11 — правая рука
+
+        finger_map = {
+            # Столбец -> домашняя клавиша
+            0: 'ф', 1: 'ы', 2: 'в', 3: 'а', 4: 'п', #левая рука
+            5: 'р', 6: 'о', 7: 'л',   # правая рука
+            8: 'ж', 9: 'ж', 10: 'э', 11: 'э'  # крайние правые — все к правому мизинцу
+        }
+
+        home_key_for_current = finger_map[col]  # Ближайшая домашняя клавиша по столбцу
+        home_pos = key_grid[home_key_for_current]
+
+        # если текущая клавиша — уже домашняя, то движение = 0
+        # иначе — это сдвиг от домашней клавиши к текущей
+
+        if current_key == home_key_for_current:
+            # Это домашняя клавиша — движение 0, ничего не добавляем
+            # Но нам нужно запомнить её как предыдущую
+            if prev_key is not None:
+                # Проверим: если предыдущий символ был от другого пальца — переход между пальцами не штрафуется
+                pass  # Не считаем штраф за смену пальца
+
+            prev_key = current_key
+            prev_pos = current_pos
+            prev_finger = key_to_home_finger.get(home_key_for_current)
+            continue
+
+        #текущая клавиша НЕ домашняя это движение от домашней клавиши
+        dx = abs(current_pos[0] - home_pos[0])
+        dy = abs(current_pos[1] - home_pos[1])
+
+        total_shift = dx + dy
+
+        if total_shift == 1:
+            # Горизонтально или вертикально на 1 клавишу
+            penalties += 1
+        elif total_shift >= 2:
+            # Диагональ (dx=1, dy=1) или 2 клавиши в одну сторону — оба случая дают 2 штрафа
+            penalties += 2
+
+        # Обновляем предыдущее состояние: теперь домашняя клавиша — это та, от которой мы пришли
+        prev_key = current_key
+        prev_pos = current_pos
+        prev_finger = key_to_home_finger.get(home_key_for_current)
+
+    return penalties
 
