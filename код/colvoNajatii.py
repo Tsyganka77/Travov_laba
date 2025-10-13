@@ -1,5 +1,5 @@
 """
-Считывает количество нажатий каждым пальцем.
+Считывает количество нажатий
 """
 
 from function import count_finger_load_qwerty, load_hand_left, load_hand_right
