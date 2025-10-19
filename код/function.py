@@ -4,9 +4,14 @@ from keyboard import (keyboard_finger_qwerty,
                       keyboard_finger_qwerty_dop,
                       qwerty_finger_count,
                       key_grid,
+                      key_grid_vyzov,
                       valid_keys,
+                      valid_keys_vyzov,
                       ignore_chars,
-                      key_to_home_finger)
+                      key_to_home_finger,
+                      keyboard_finger_vyzov,
+                      keyboard_finger_vyzov_dop,
+                      vyzov_finger_count)
 
 def find_finger(character, keyboard_layout):
     # 1. Ищем в основной раскладке
@@ -20,7 +25,14 @@ def find_finger(character, keyboard_layout):
             if character in characters:
                 return finger_name, 1  # flag = 1 — доп. раскладка
 
-    # 3. Если нигде не нашли — ошибка
+    #3. Ищем в кв VYZOV
+    if keyboard_layout is keyboard_finger_vyzov:
+        for finger_name, characters in keyboard_finger_vyzov_dop.items():
+            if character in characters:
+                return finger_name, 1
+
+
+    # 3. Если нигде не нашли — ошибкa
     return "Invalid character: {}".format(character), 0
 
 def count_finger_load_qwerty(text):
@@ -40,6 +52,32 @@ def count_finger_load_qwerty(text):
     layout_1 = list(qwerty_finger_count.values())
     return layout_1
 
+SPECIAL_CHARS = {'№', 'ц', 'щ', 'ъ', 'ю', 'э'}
+
+def count_finger_load_vyzov(text):
+    """
+    Счетки нагрузки на пальцы на кв VYZOV
+    """
+
+    # Создаём чистый счётчик
+    finger_count = {k: 0 for k in keyboard.vyzov_finger_count}
+
+    for char in text:
+        # Основной палец
+        finger_name, flag_nado = find_finger(char.lower(), keyboard_finger_vyzov)
+        if finger_name in finger_count:
+            finger_count[finger_name] += 1
+
+        # Shift
+        if char.isupper() or flag_nado == 1:
+            finger_count['leftfinger5'] += 1
+
+        # Особые символы → AltGr / альтернативный палец
+        if char.lower() in SPECIAL_CHARS:
+            finger_count['rightfinger1'] += 1
+
+    layout_2 = list(finger_count.values())
+    return layout_2
 
 def load_hand_left(list):
     """
@@ -79,11 +117,12 @@ def clicks(layout_1, layout_2, layout_3, layout_4):
             'правый большой', 'правый указательный', 'правый средний',
             'правый безымянный', 'правый мизинец']
     fing_d_qwerty = dict(zip(fing, layout_1))
-    return fing_d_qwerty
+    fing_d_vyzov = dict(zip(fing, layout_2))
+    return fing_d_qwerty, fing_d_vyzov
 
 def calculate_penalties(text):
     """
-    Подсчитывает штрафы для русского текста.
+    Подсчитывает штрафы для русского текста на кв QWERTY.
     Штрафы начисляются за перемещение пальца от домашней клавиши.
     """
     penalties = 0
@@ -122,8 +161,8 @@ def calculate_penalties(text):
         finger_map = {
             # Столбец -> домашняя клавиша
             0: 'ф', 1: 'ы', 2: 'в', 3: 'а', 4: 'п', #левая рука
-            5: 'р', 6: 'о', 7: 'л',   # правая рука
-            8: 'ж', 9: 'ж', 10: 'э', 11: 'э'  # крайние правые — все к правому мизинцу
+            5: 'р', 6: 'о', 7: 'л', 8: 'д',  # правая рука
+            9: 'ж', 10: 'э', 11: 'э'  # крайние правые — все к правому мизинцу
         }
 
         home_key_for_current = finger_map[col]  # Ближайшая домашняя клавиша по столбцу
@@ -164,3 +203,60 @@ def calculate_penalties(text):
 
     return penalties
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+def calculate_penalties_vyzov(text):
+    """
+    Подсчитывает штрафы для русского текста на раскладке ВЫЗОВ.
+    Штрафы начисляются за перемещение пальца от домашней клавиши.
+    """
+    penalties = 0
+
+    for char in text.lower():
+        if char in ignore_chars:
+            continue
+        if char not in valid_keys_vyzov:
+            continue
+
+        current_key = char
+        current_pos = key_grid_vyzov[char]
+
+        col = current_pos[0]
+        row = current_pos[1]
+
+        # Определяем домашнюю клавишу для этого столбца
+        # Используем фиксированный список домашних клавиш по столбцам
+        home_keys_by_col = ['ю', 'ы', 'э', 'у', 'н', 'д', 'т', 'щ']
+        if col < len(home_keys_by_col):
+            home_key_for_current = home_keys_by_col[col]
+            home_pos = key_grid_vyzov[home_key_for_current]
+        else:
+            # Если столбец вне диапазона — пропускаем
+            continue
+
+        # Если текущая клавиша — домашняя, штраф = 0
+        if current_key == home_key_for_current:
+            continue
+
+        # Иначе — считаем расстояние
+        dx = abs(current_pos[0] - home_pos[0])  # всегда 0, т.к. один столбец
+        dy = abs(current_pos[1] - home_pos[1])
+
+        # В нашей модели dx = 0, поэтому штраф зависит только от dy
+        if dy == 1:
+            penalties += 1
+        elif dy >= 2:
+            penalties += 2
+
+    return penalties

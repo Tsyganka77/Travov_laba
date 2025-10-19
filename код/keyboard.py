@@ -64,3 +64,97 @@ valid_keys = set(key_grid.keys())
 # Символы, которые не влияют на штрафы
 ignore_chars = set(' \t\n\r.,!?;:"\'()[]{}-_+=*/\\|@#$%^&`~')
 
+keyboard_finger_vyzov = {
+    "leftfinger5": ('ю', 'ё', 'в', 'ч', 'ш'),
+    "leftfinger4": ('ы', 'и', 'х', '['),
+    "leftfinger3": ('э', 'о', 'е', 'й'),
+    "leftfinger2": ('Э', 'у', 'а', 'к', '(', 'ь', ',', '_'),
+    "leftfinger1": ' ',
+    "rightfinger2": ('=', '*', 'ё', '.', '/', '^', 'н', 'р'),
+    "rightfinger3": (')', 'д', 'т', 'м'),
+    "rightfinger4": ('+', 'я', 'с', 'ф'),
+    "rightfinger5": (']', '!', 'щ', 'г', 'ж', 'ц', 'б', 'з', 'п', 'ъ')
+}
+
+keyboard_finger_vyzov_dop = {
+    "leftfinger5": '%',
+    "leftfinger4": '7',
+    "leftfinger3": '5',
+    "leftfinger2": ('3', '1'),
+    "rightfinger2": ('9', '0'),
+    "rightfinger3": '2',
+    "rightfinger4": '4',
+    "rightfinger5": ('6', '8', '#', '@')
+}
+
+vyzov_finger_count = {'leftfinger5': 0, 'leftfinger4': 0, 'leftfinger3': 0, 'leftfinger2': 0,
+                      'leftfinger1': 0, 'rightfinger1': 0, 'rightfinger2': 0,
+                      'rightfinger3': 0, 'rightfinger4': 0, 'rightfinger5': 0}
+
+
+
+
+
+
+
+
+
+# --- Добавить в keyboard.py ---
+
+# Домашние клавиши для ВЫЗОВ (по одному на палец, без больших пальцев)
+home_keys_vyzov = {'ю', 'ы', 'э', 'у', 'н', 'д', 'т', 'щ'}
+
+# Маппинг: клавиша → домашний палец (для штрафов)
+key_to_home_finger_vyzov = {
+    'ю': 'left_pinky',
+    'ы': 'left_ring',
+    'э': 'left_middle',
+    'у': 'left_index',
+    'н': 'right_index',
+    'д': 'right_middle',
+    'т': 'right_ring',
+    'щ': 'right_pinky'
+}
+
+# Сетка клавиш для ВЫЗОВ: (столбец, строка)
+# Столбцы: 0=ю, 1=ы, 2=э, 3=у, 4=н, 5=д, 6=т, 7=щ
+# Добавим остальные клавиши, распределив их по столбцам согласно keyboard_finger_vyzov
+
+key_grid_vyzov = {}
+
+# Помощник: маппинг пальца → столбец
+finger_to_col = {
+    'leftfinger5': 0,   # ю
+    'leftfinger4': 1,   # ы
+    'leftfinger3': 2,   # э
+    'leftfinger2': 3,   # у
+    'rightfinger2': 4,  # н
+    'rightfinger3': 5,  # д
+    'rightfinger4': 6,  # т
+    'rightfinger5': 7,  # щ
+}
+
+# Заполняем сетку
+for finger, chars in keyboard_finger_vyzov.items():
+    if finger in ('leftfinger1', 'rightfinger1'):
+        continue  # большие пальцы — не в сетке
+    col = finger_to_col.get(finger)
+    if col is None:
+        continue
+    for char in chars:
+        if char == ' ':
+            continue
+        # Определяем строку: если char в домашних — row=1, иначе 0 или 2
+        if char in home_keys_vyzov:
+            row = 1
+        elif char in ['в', 'и', 'о', 'а', 'р', 'м', 'ь', 'ё', '.', '/', '^', '(', ',', '_', ')']:
+            row = 0  # верхний ряд
+        else:
+            row = 2  # нижний ряд
+        key_grid_vyzov[char] = (col, row)
+
+# Все допустимые клавиши для ВЫЗОВ
+valid_keys_vyzov = set(key_grid_vyzov.keys())
+
+# Символы, которые игнорируем (как и раньше)
+ignore_chars = set(' \t\n\r.,!?;:"\'()[]{}-_+=*/\\|@#$%^&`~')
