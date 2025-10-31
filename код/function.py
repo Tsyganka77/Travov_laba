@@ -1,262 +1,246 @@
-import keyboard
-import numpy as np
-from keyboard import (keyboard_finger_qwerty,
-                      keyboard_finger_qwerty_dop,
-                      qwerty_finger_count,
-                      key_grid,
-                      key_grid_vyzov,
-                      valid_keys,
-                      valid_keys_vyzov,
-                      ignore_chars,
-                      key_to_home_finger,
-                      keyboard_finger_vyzov,
-                      keyboard_finger_vyzov_dop,
-                      vyzov_finger_count)
+"""Functions for calculating finger load and penalties."""
+
+from keyboard import (
+    KEYBOARD_FINGER_QWERTY,
+    KEYBOARD_FINGER_QWERTY_DOP,
+    QWERTY_FINGER_COUNT,
+    VALID_KEYS_QWERTY,
+    KEYBOARD_FINGER_VYZOV,
+    KEYBOARD_FINGER_VYZOV_DOP,
+    VYZOV_FINGER_COUNT,
+    VALID_KEYS_VYZOV,
+    KEYBOARD_FINGER_DICTOR,
+    KEYBOARD_FINGER_DICTOR_DOP,
+    DICTOR_FINGER_COUNT,
+    VALID_KEYS_DICTOR,
+    HOME_KEYS_QWERTY,
+    KEY_GRID_QWERTY,
+    KEY_GRID_VYZOV,
+    KEY_GRID_DICTOR,
+    HOME_ROW_VYZOV,
+    HOME_ROW_DICTOR,
+    FINGER_TO_COL_VYZOV,
+    FINGER_TO_COL_DICTOR,
+    IGNORE_CHARS,
+)
+
 
 def find_finger(character, keyboard_layout):
-    # 1. Ищем в основной раскладке
+    """Find which finger types the character."""
     for finger_name, characters in keyboard_layout.items():
-        if character in characters:
-            return finger_name, 0  # flag = 0 — основная раскладка
-
-    # 2. Если не нашли — ищем во вспомогательной (только для QWERTY)
-    if keyboard_layout is keyboard_finger_qwerty:
-        for finger_name, characters in keyboard_finger_qwerty_dop.items():
-            if character in characters:
-                return finger_name, 1  # flag = 1 — доп. раскладка
-
-    #3. Ищем в кв VYZOV
-    if keyboard_layout is keyboard_finger_vyzov:
-        for finger_name, characters in keyboard_finger_vyzov_dop.items():
-            if character in characters:
+        if character in (characters if isinstance(characters, (list, tuple)) else [characters]):
+            return finger_name, 0
+    if keyboard_layout is KEYBOARD_FINGER_QWERTY:
+        for finger_name, characters in KEYBOARD_FINGER_QWERTY_DOP.items():
+            if character in (characters if isinstance(characters, (list, tuple)) else [characters]):
                 return finger_name, 1
+    if keyboard_layout is KEYBOARD_FINGER_VYZOV:
+        for finger_name, characters in KEYBOARD_FINGER_VYZOV_DOP.items():
+            if character in (characters if isinstance(characters, (list, tuple)) else [characters]):
+                return finger_name, 1
+    if keyboard_layout is KEYBOARD_FINGER_DICTOR:
+        for finger_name, characters in KEYBOARD_FINGER_DICTOR_DOP.items():
+            if character in (characters if isinstance(characters, (list, tuple)) else [characters]):
+                return finger_name, 1
+    return f"Invalid character: {character}", 0
 
-
-    # 3. Если нигде не нашли — ошибкa
-    return "Invalid character: {}".format(character), 0
 
 def count_finger_load_qwerty(text):
-    """
-        Подсчитывает нагрузку на пальцы, использованные при наборе текста
-        на клавиатурной раскладке ЙЦУКЕН.
-    """
-    for character in text:
-        finger_name, flag_nado = \
-            find_finger(character.lower(), keyboard_finger_qwerty)
-        if finger_name in keyboard.qwerty_finger_count:
-            keyboard.qwerty_finger_count[finger_name] += 1
-            if character.isupper() or flag_nado == 1:
-                shift_finger = 'leftfinger5'
-                keyboard.qwerty_finger_count[shift_finger] += 1
-
-    layout_1 = list(qwerty_finger_count.values())
-    return layout_1
-
-SPECIAL_CHARS = {'№', 'ц', 'щ', 'ъ', 'ю', 'э'}
-
-def count_finger_load_vyzov(text):
-    """
-    Счетки нагрузки на пальцы на кв VYZOV
-    """
-
-    # Создаём чистый счётчик
-    finger_count = {k: 0 for k in keyboard.vyzov_finger_count}
+    """Count finger load for QWERTY layout."""
+    for key in QWERTY_FINGER_COUNT:
+        QWERTY_FINGER_COUNT[key] = 0
 
     for char in text:
-        # Основной палец
-        finger_name, flag_nado = find_finger(char.lower(), keyboard_finger_vyzov)
+        if char == " ":
+            finger_name, _ = find_finger(" ", KEYBOARD_FINGER_QWERTY)
+            if finger_name in QWERTY_FINGER_COUNT:
+                QWERTY_FINGER_COUNT[finger_name] += 1
+            continue
+
+        ch_low = char.lower()
+        in_main = ch_low in VALID_KEYS_QWERTY
+        in_dop = any(
+            ch_low in (v if isinstance(v, (list, tuple)) else [v])
+            for v in KEYBOARD_FINGER_QWERTY_DOP.values()
+        )
+        if not (in_main or in_dop):
+            continue
+
+        finger_name, flag_nado = find_finger(ch_low, KEYBOARD_FINGER_QWERTY)
+        if finger_name in QWERTY_FINGER_COUNT:
+            QWERTY_FINGER_COUNT[finger_name] += 1
+            if char.isupper() or flag_nado == 1:
+                QWERTY_FINGER_COUNT["leftfinger5"] += 1
+    return list(QWERTY_FINGER_COUNT.values())
+
+
+def count_finger_load_vyzov(text):
+    """Count finger load for VYZOV layout."""
+    finger_count = {k: 0 for k in VYZOV_FINGER_COUNT}
+    for char in text:
+        if char == " ":
+            finger_name, _ = find_finger(" ", KEYBOARD_FINGER_VYZOV)
+            if finger_name in finger_count:
+                finger_count[finger_name] += 1
+            continue
+
+        ch_low = char.lower()
+        in_main = ch_low in VALID_KEYS_VYZOV
+        in_dop = any(
+            ch_low in (v if isinstance(v, (list, tuple)) else [v])
+            for v in KEYBOARD_FINGER_VYZOV_DOP.values()
+        )
+        if not (in_main or in_dop):
+            continue
+
+        finger_name, flag_nado = find_finger(ch_low, KEYBOARD_FINGER_VYZOV)
         if finger_name in finger_count:
             finger_count[finger_name] += 1
-
-        # Shift
         if char.isupper() or flag_nado == 1:
-            finger_count['leftfinger5'] += 1
-
-        # Особые символы → AltGr / альтернативный палец
-        if char.lower() in SPECIAL_CHARS:
-            finger_count['rightfinger1'] += 1
-
-    layout_2 = list(finger_count.values())
-    return layout_2
-
-def load_hand_left(list):
-    """
-        Вычисляет процент нагрузки
-        на левую руку на основе значений из переданного списка.
-    """
-    start_index = 0
-    end_index = 5
-    start_index_1 = 0
-    end_index_1 = 9
-    partial_sum = sum(list[start_index:end_index])
-    general_sum = sum(list[start_index_1:end_index_1])
-    procent = int((partial_sum * 100) / general_sum)
-    return procent
+            finger_count["leftfinger5"] += 1
+    return list(finger_count.values())
 
 
-def load_hand_right(list):
-    """
-        Вычисляет процент нагрузки
-        на правую руку на основе значений из переданного списка.
-    """
-    start_index = 5
-    end_index = 9
-    start_index_1 = 0
-    end_index_1 = 9
-    partial_sum = sum(list[start_index:end_index])
-    general_sum = sum(list[start_index_1:end_index_1])
-    procent = int((partial_sum * 100) / general_sum)
-    return procent
+def count_finger_load_dictor(text):
+    """Count finger load for DICTOR layout."""
+    finger_count = {k: 0 for k in DICTOR_FINGER_COUNT}
+    for char in text:
+        if char == " ":
+            finger_name, _ = find_finger(" ", KEYBOARD_FINGER_DICTOR)
+            if finger_name in finger_count:
+                finger_count[finger_name] += 1
+            continue
 
-def clicks(layout_1, layout_2, layout_3, layout_4):
-    """
-        Выводит количество нажатий на каждый палец
-    """
-    fing = ['левый мизинец', 'левый безымянный', 'левый средний',
-            'левый указательный', 'левый большой',
-            'правый большой', 'правый указательный', 'правый средний',
-            'правый безымянный', 'правый мизинец']
-    fing_d_qwerty = dict(zip(fing, layout_1))
-    fing_d_vyzov = dict(zip(fing, layout_2))
-    return fing_d_qwerty, fing_d_vyzov
+        ch_low = char.lower()
+        in_main = ch_low in VALID_KEYS_DICTOR
+        in_dop = any(
+            ch_low in (v if isinstance(v, (list, tuple)) else [v])
+            for v in KEYBOARD_FINGER_DICTOR_DOP.values()
+        )
+        if not (in_main or in_dop):
+            continue
 
-def calculate_penalties(text):
-    """
-    Подсчитывает штрафы для русского текста на кв QWERTY.
-    Штрафы начисляются за перемещение пальца от домашней клавиши.
-    """
+        finger_name, flag_nado = find_finger(ch_low, KEYBOARD_FINGER_DICTOR)
+        if finger_name in finger_count:
+            finger_count[finger_name] += 1
+        if char.isupper() or flag_nado == 1:
+            finger_count["leftfinger5"] += 1
+    return list(finger_count.values())
+
+
+def load_hand_left(load_list):
+    """Calculate left hand load percentage."""
+    total = sum(load_list)
+    return int((sum(load_list[:5]) * 100) / total) if total > 0 else 0
+
+
+def load_hand_right(load_list):
+    """Calculate right hand load percentage."""
+    total = sum(load_list)
+    return int((sum(load_list[5:10]) * 100) / total) if total > 0 else 0
+
+
+def calculate_penalties_qwerty(text):
+    """Calculate movement penalties for QWERTY."""
     penalties = 0
-    prev_key = None
-    prev_pos = None
-    prev_finger = None
-
     for char in text.lower():
-        if char in ignore_chars:
+        if char in IGNORE_CHARS or char not in VALID_KEYS_QWERTY:
             continue
-
-        if char not in valid_keys:
-            continue  # Пропускаем неизвестные символы
-
-        current_key = char
-        current_pos = key_grid[char]
-
-        # Определяем, какой палец должен был нажать эту клавишу
-        # Если клавиша — из домашней строки, то палец «домашний»
-        # Если нет — определяем, с какой домашней клавиши он пришёл
-        # каждый символ набирается с ближайшей домашней клавиши
-        # если клавиша не из домашней строки — она набирается с ближайшей домашней
-        # и это движение засчитывается как штраф.
-
-        # Определим, какой домашний палец отвечает за эту клавишу
-        # один и тот же палец работает в одном вертикальном столбце
-
-        col = current_pos[0]
-        row = current_pos[1]
-
-        # Сопоставим столбцы с домашними пальцами
-        # Левая рука: столбцы 0–3 → пальцы от Ф до А
-        # Правая рука: столбцы 4–7 → пальцы от П до Л
-        # Столбцы 8–11 — правая рука
-
-        finger_map = {
-            # Столбец -> домашняя клавиша
-            0: 'ф', 1: 'ы', 2: 'в', 3: 'а', 4: 'п', #левая рука
-            5: 'р', 6: 'о', 7: 'л', 8: 'д',  # правая рука
-            9: 'ж', 10: 'э', 11: 'э'  # крайние правые — все к правому мизинцу
-        }
-
-        home_key_for_current = finger_map[col]  # Ближайшая домашняя клавиша по столбцу
-        home_pos = key_grid[home_key_for_current]
-
-        # если текущая клавиша — уже домашняя, то движение = 0
-        # иначе — это сдвиг от домашней клавиши к текущей
-
-        if current_key == home_key_for_current:
-            # Это домашняя клавиша — движение 0, ничего не добавляем
-            # Но нам нужно запомнить её как предыдущую
-            if prev_key is not None:
-                # Проверим: если предыдущий символ был от другого пальца — переход между пальцами не штрафуется
-                pass  # Не считаем штраф за смену пальца
-
-            prev_key = current_key
-            prev_pos = current_pos
-            prev_finger = key_to_home_finger.get(home_key_for_current)
-            continue
-
-        #текущая клавиша НЕ домашняя это движение от домашней клавиши
-        dx = abs(current_pos[0] - home_pos[0])
-        dy = abs(current_pos[1] - home_pos[1])
-
-        total_shift = dx + dy
-
-        if total_shift == 1:
-            # Горизонтально или вертикально на 1 клавишу
-            penalties += 1
-        elif total_shift >= 2:
-            # Диагональ (dx=1, dy=1) или 2 клавиши в одну сторону — оба случая дают 2 штрафа
+        if char == " ":
+            continue  # Пробел не даёт штрафов
+        col, row = KEY_GRID_QWERTY[char]
+        home_char = None
+        for h in HOME_KEYS_QWERTY:
+            if KEY_GRID_QWERTY[h][0] == col:
+                home_char = h
+                break
+        if home_char is None:
             penalties += 2
-
-        # Обновляем предыдущее состояние: теперь домашняя клавиша — это та, от которой мы пришли
-        prev_key = current_key
-        prev_pos = current_pos
-        prev_finger = key_to_home_finger.get(home_key_for_current)
-
+            continue
+        home_row = KEY_GRID_QWERTY[home_char][1]
+        dy = abs(row - home_row)
+        if dy == 1:
+            penalties += 1
+        elif dy >= 2:
+            penalties += 2
     return penalties
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 def calculate_penalties_vyzov(text):
-    """
-    Подсчитывает штрафы для русского текста на раскладке ВЫЗОВ.
-    Штрафы начисляются за перемещение пальца от домашней клавиши.
-    """
+    """Calculate movement + shift penalties for VYZOV."""
     penalties = 0
+    dop_chars = set()
+    for chars in KEYBOARD_FINGER_VYZOV_DOP.values():
+        dop_chars.update(chars if isinstance(chars, (list, tuple)) else [chars])
 
     for char in text.lower():
-        if char in ignore_chars:
+        if char in IGNORE_CHARS:
             continue
-        if char not in valid_keys_vyzov:
+        if char == " ":
             continue
 
-        current_key = char
-        current_pos = key_grid_vyzov[char]
+        if char not in VALID_KEYS_VYZOV and char not in dop_chars:
+            continue
 
-        col = current_pos[0]
-        row = current_pos[1]
-
-        # Определяем домашнюю клавишу для этого столбца
-        # Используем фиксированный список домашних клавиш по столбцам
-        home_keys_by_col = ['ю', 'ы', 'э', 'у', 'н', 'д', 'т', 'щ']
-        if col < len(home_keys_by_col):
-            home_key_for_current = home_keys_by_col[col]
-            home_pos = key_grid_vyzov[home_key_for_current]
+        col, row = None, None
+        if char in KEY_GRID_VYZOV:
+            col, row = KEY_GRID_VYZOV[char]
         else:
-            # Если столбец вне диапазона — пропускаем
+            for finger, chars in KEYBOARD_FINGER_VYZOV_DOP.items():
+                if char in (chars if isinstance(chars, (list, tuple)) else [chars]):
+                    col = FINGER_TO_COL_VYZOV.get(finger)
+                    row = 0
+                    break
+        if col is None or col >= len(HOME_ROW_VYZOV):
+            penalties += 2
             continue
 
-        # Если текущая клавиша — домашняя, штраф = 0
-        if current_key == home_key_for_current:
-            continue
-
-        # Иначе — считаем расстояние
-        dx = abs(current_pos[0] - home_pos[0])  # всегда 0, т.к. один столбец
-        dy = abs(current_pos[1] - home_pos[1])
-
-        # В нашей модели dx = 0, поэтому штраф зависит только от dy
+        dy = abs(row - 1)
         if dy == 1:
             penalties += 1
         elif dy >= 2:
             penalties += 2
 
+        if char in dop_chars:
+            penalties += 1
+    return penalties
+
+
+def calculate_penalties_dictor(text):
+    """Calculate movement + shift penalties for DICTOR."""
+    penalties = 0
+    dop_chars = set()
+    for chars in KEYBOARD_FINGER_DICTOR_DOP.values():
+        dop_chars.update(chars if isinstance(chars, (list, tuple)) else [chars])
+
+    for char in text.lower():
+        if char in IGNORE_CHARS:
+            continue
+        if char == " ":
+            continue
+
+        if char not in VALID_KEYS_DICTOR and char not in dop_chars:
+            continue
+
+        col, row = None, None
+        if char in KEY_GRID_DICTOR:
+            col, row = KEY_GRID_DICTOR[char]
+        else:
+            for finger, chars in KEYBOARD_FINGER_DICTOR_DOP.items():
+                if char in (chars if isinstance(chars, (list, tuple)) else [chars]):
+                    col = FINGER_TO_COL_DICTOR.get(finger)
+                    row = 0
+                    break
+        if col is None or col >= len(HOME_ROW_DICTOR):
+            penalties += 2
+            continue
+
+        dy = abs(row - 1)
+        if dy == 1:
+            penalties += 1
+        elif dy >= 2:
+            penalties += 2
+
+        if char in dop_chars:
+            penalties += 1
     return penalties
