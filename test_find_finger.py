@@ -38,19 +38,19 @@ def dictor_dop_layout():
 # -------------------------------------------------
 
 def test_find_finger_qwerty_main(qwerty_layout):
-    # Символ из основной раскладки QWERTY
+    """Символ из основной раскладки QWERTY"""
     finger, flag = find_finger('ф', qwerty_layout)
     assert finger == 'leftfinger5'
     assert flag == 0
 
 def test_find_finger_qwerty_dop(qwerty_layout):
-    # Символ из дополнительной раскладки QWERTY
+    """Символ из дополнительной раскладки QWERTY"""
     finger, flag = find_finger('!', qwerty_layout)
     assert finger == 'leftfinger5'
     assert flag == 1
 
 def test_find_finger_qwerty_invalid(qwerty_layout):
-    # Невалидный символ в QWERTY
+    """Невалидный символ в QWERTY"""
     result, flag = find_finger('木', qwerty_layout)
     assert result == "Invalid character: 木"
     assert flag == 0
@@ -61,19 +61,19 @@ def test_find_finger_qwerty_invalid(qwerty_layout):
 # -------------------------------------------------
 
 def test_find_finger_vyzov_main(vyzov_layout):
-    # Символ из основной раскладки VYZOV
+    """Символ из основной раскладки VYZOV"""
     finger, flag = find_finger('ч', vyzov_layout)
     assert finger == 'leftfinger5'
     assert flag == 0
 
 def test_find_finger_vyzov_dop(vyzov_layout):
-    # Символ из дополнительной раскладки VYZOV
+    """Символ из дополнительной раскладки VYZOV"""
     finger, flag = find_finger('%', vyzov_layout)
     assert finger == 'leftfinger5'
     assert flag == 1
 
 def test_find_finger_vyzov_invalid(vyzov_layout):
-    # Невалидный символ в VYZOV
+    """Невалидный символ в VYZOV"""
     result, flag = find_finger('木', vyzov_layout)
     assert result == "Invalid character: 木"
     assert flag == 0
@@ -84,19 +84,19 @@ def test_find_finger_vyzov_invalid(vyzov_layout):
 # -------------------------------------------------
 
 def test_find_finger_dictor_main(dictor_layout):
-    # Символ из основной раскладки DICTOR
+    """Символ из основной раскладки DICTOR"""
     finger, flag = find_finger('у', dictor_layout)
     assert finger == 'leftfinger5'
     assert flag == 0
 
 def test_find_finger_dictor_dop(dictor_layout):
-    # Символ из дополнительной раскладки DICTOR
+    """Символ из дополнительной раскладки DICTOR"""
     finger, flag = find_finger('#', dictor_layout)
     assert finger == 'rightfinger5'
     assert flag == 1
 
 def test_find_finger_dictor_invalid(dictor_layout):
-    # Невалидный символ в DICTOR
+    """Невалидный символ в DICTOR"""
     result, flag = find_finger('木', dictor_layout)
     assert result == "Invalid character: 木"
     assert flag == 0
@@ -130,17 +130,17 @@ def test_find_finger_list_char():
 # -------------------------------------------------
 
 def test_find_finger_space(qwerty_layout, vyzov_layout, dictor_layout):
-    # Пробел в QWERTY
+    """Пробел в QWERTY"""
     finger, flag = find_finger(' ', qwerty_layout)
     assert finger == 'leftfinger1'
     assert flag == 0
 
-    # Пробел в VYZOV
+    """Пробел в VYZOV"""
     finger, flag = find_finger(' ', vyzov_layout)
     assert finger == 'leftfinger1'
     assert flag == 0
 
-    # Пробел в DICTOR
+    """Пробел в DICTOR"""
     finger, flag = find_finger(' ', dictor_layout)
     assert finger == 'leftfinger1'
     assert flag == 0
