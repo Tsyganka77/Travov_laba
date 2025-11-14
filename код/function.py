@@ -28,19 +28,19 @@ from keyboard import (
 def find_finger(character, keyboard_layout):
     """Find which finger types the character."""
     for finger_name, characters in keyboard_layout.items():
-        if character in (characters if isinstance(characters, (list, tuple)) else [characters]):
+        if character in (characters if isinstance(characters, (list, tuple)) else characters):
             return finger_name, 0
     if keyboard_layout is KEYBOARD_FINGER_QWERTY:
         for finger_name, characters in KEYBOARD_FINGER_QWERTY_DOP.items():
-            if character in (characters if isinstance(characters, (list, tuple)) else [characters]):
+            if character in (characters if isinstance(characters, (list, tuple)) else characters):
                 return finger_name, 1
     if keyboard_layout is KEYBOARD_FINGER_VYZOV:
         for finger_name, characters in KEYBOARD_FINGER_VYZOV_DOP.items():
-            if character in (characters if isinstance(characters, (list, tuple)) else [characters]):
+            if character in (characters if isinstance(characters, (list, tuple)) else characters):
                 return finger_name, 1
     if keyboard_layout is KEYBOARD_FINGER_DICTOR:
         for finger_name, characters in KEYBOARD_FINGER_DICTOR_DOP.items():
-            if character in (characters if isinstance(characters, (list, tuple)) else [characters]):
+            if character in (characters if isinstance(characters, (list, tuple)) else characters):
                 return finger_name, 1
     return f"Invalid character: {character}", 0
 
