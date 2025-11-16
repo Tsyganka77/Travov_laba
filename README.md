@@ -16,5 +16,9 @@
 
 ```bash
 git clone https://github.com/Tsyganka77/Travov_laba.git
+```
+```bash
 cd Travov_laba
+```
+```bash
 pip install -r requirements.txt 
