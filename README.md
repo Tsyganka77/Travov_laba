@@ -38,3 +38,7 @@ python3 main.py
 
 ### Результаты
 <img width="1500" height="1200" alt="plot_2025-11-17 01-55-51_0" src="https://github.com/user-attachments/assets/24292b55-460b-4a8a-bbe8-947116e04160" />
+<img width="1000" height="600" alt="plot_2025-11-17 01-55-51_1" src="https://github.com/user-attachments/assets/e4e655ad-0f62-404f-a03e-846eec689169" />
+*Упрощённая версия*
+<img width="1500" height="600" alt="myplot" src="https://github.com/user-attachments/assets/3ca522bc-36f5-484d-9e57-2f49533b9178" />
+
