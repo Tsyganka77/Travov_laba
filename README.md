@@ -37,4 +37,4 @@ python3 main.py
 ```
 
 ### Результаты
-myplot.png
+<img width="1500" height="1200" alt="plot_2025-11-17 01-55-51_0" src="https://github.com/user-attachments/assets/24292b55-460b-4a8a-bbe8-947116e04160" />
