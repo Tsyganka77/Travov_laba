@@ -35,3 +35,5 @@ git clone https://github.com/Tsyganka77/Travov_laba.git
 ```bash
 python3 main.py
 ```
+
+## Результаты
