@@ -30,8 +30,8 @@
 ```bash
 git clone https://github.com/Tsyganka77/Travov_laba.git
 ```
+Запустить лабу 
+
 ```bash
-cd Travov_laba
+python3 main.py
 ```
-```bash
-pip install -r requirements.txt 
