@@ -8,8 +8,9 @@
 - Вызов
 - Диктор
 
-Йцукен(<img width="800" height="238" alt="image" src="https://github.com/user-attachments/assets/3f7abfe2-03ce-4e18-821e-cae6a6b4498f" />
-)
+*Йцукен*
+<img width="800" height="238" alt="image" src="https://github.com/user-attachments/assets/3f7abfe2-03ce-4e18-821e-cae6a6b4498f" />
+
 
 ---
 
