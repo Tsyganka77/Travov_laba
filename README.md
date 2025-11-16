@@ -37,3 +37,4 @@ python3 main.py
 ```
 
 ### Результаты
+myplot.png
