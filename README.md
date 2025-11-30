@@ -39,5 +39,6 @@ python3 main.py
 ### Результаты
 <img width="1500" height="1200" alt="myplot2" src="https://github.com/user-attachments/assets/3ec2221e-f389-42ba-88dc-1f43d2824bbc" />
 <img width="1000" height="600" alt="myplot4" src="https://github.com/user-attachments/assets/3a254d70-f615-485c-be83-a37fb206b6ca" />
+
 ### Вывод 
-ЙЦУКЕН лучший!!!
+ВЫЗОВ лучший!!!
