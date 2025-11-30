@@ -37,7 +37,6 @@ python3 main.py
 ```
 
 ### Результаты
-<img width="1500" height="1200" alt="myplot" src="https://github.com/user-attachments/assets/fb1f4c6c-a570-4a36-8896-146ad5a1efbb" />
-<img width="1000" height="600" alt="plot_2025-11-17 01-55-51_1" src="https://github.com/user-attachments/assets/e4e655ad-0f62-404f-a03e-846eec689169" />
-Упрощённая версия
-<img width="1500" height="600" alt="myplot" src="https://github.com/user-attachments/assets/3ca522bc-36f5-484d-9e57-2f49533b9178" />
+<img width="1500" height="1200" alt="myplot2" src="https://github.com/user-attachments/assets/3ec2221e-f389-42ba-88dc-1f43d2824bbc" />
+<img width="1000" height="600" alt="myplot4" src="https://github.com/user-attachments/assets/3a254d70-f615-485c-be83-a37fb206b6ca" />
+
