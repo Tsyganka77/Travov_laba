@@ -45,15 +45,23 @@ python3 main.py
 
 # ЛАБА2
 
-Далее мы берём ещё 4 раскладки
+Далее мы берём ещё 4 раскладки:
 
 - Скоропись
-  <img width="710" height="245" alt="skoropis" src="https://github.com/user-attachments/assets/18ce037c-4f9e-4ba3-8289-bb9f568feb08" />
 - Зубачёв
-  <img width="742" height="256" alt="zubachew" src="https://github.com/user-attachments/assets/00f3c083-6ac6-42c6-b390-d31ca18911eb" />
 - Русская фонетическая
-  <img width="710" height="245" alt="rusphone" src="https://github.com/user-attachments/assets/f33ef573-abc0-479a-9279-80501ee75a80" />
 - АНТ
-  <img width="742" height="256" alt="ant" src="https://github.com/user-attachments/assets/3edaafa2-7be3-45f8-b786-97aa93aaf2ee" />
+
+### Скоропись
+<img width="710" height="245" alt="skoropis" src="https://github.com/user-attachments/assets/18ce037c-4f9e-4ba3-8289-bb9f568feb08" />
+
+### Зубачёв
+<img width="742" height="256" alt="zubachew" src="https://github.com/user-attachments/assets/00f3c083-6ac6-42c6-b390-d31ca18911eb" />
+
+### Русская фонетическая
+<img width="710" height="245" alt="rusphone" src="https://github.com/user-attachments/assets/f33ef573-abc0-479a-9279-80501ee75a80" />
+
+### АНТ
+<img width="742" height="256" alt="ant" src="https://github.com/user-attachments/assets/3edaafa2-7be3-45f8-b786-97aa93aaf2ee" />
 
 
