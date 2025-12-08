@@ -64,4 +64,7 @@ python3 main.py
 ### АНТ
 <img width="742" height="256" alt="ant" src="https://github.com/user-attachments/assets/3edaafa2-7be3-45f8-b786-97aa93aaf2ee" />
 
+### Результаты
+<img width="2000" height="1500" alt="myplot3" src="https://github.com/user-attachments/assets/68a8a7a2-546d-44b2-a976-53111ad6bd20" />
+<img width="1600" height="2000" alt="myplot4" src="https://github.com/user-attachments/assets/3d00f5e8-a2ec-4140-b800-f915c6a36717" />
 
