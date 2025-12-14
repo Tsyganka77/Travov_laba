@@ -1,454 +1,257 @@
 """Keyboard layout definitions and key grids."""
 
+import re
+
 # ====================== QWERTY (ЙЦУКЕН) ======================
 
-KEYBOARD_FINGER_QWERTY = {
-    "leftfinger5": ("ё", "1", "й", "ф", "я"),
-    "leftfinger4": ("2", "ц", "ы", "ч"),
-    "leftfinger3": ("3", "у", "в", "с"),
-    "leftfinger2": ("4", "к", "а", "м", "5", "е", "п", "и"),
-    "leftfinger1": (" ",),
-    "rightfinger2": ("6", "н", "р", "т", "7", "г", "о", "ь"),
-    "rightfinger3": ("8", "ш", "л", "б"),
-    "rightfinger4": ("9", "щ", "д", "ю"),
-    "rightfinger5": ("0", "-", "=", "з", "ж", ".", "х", "э", "ъ"),
+KEYBOARD_QWERTY = {
+    "leftfinger5": ("ё", "1", "!", "й", "ф", "я", "Й", "Ф", "Я"),
+    "leftfinger4": ("2", "\"", "ц", "ы", "ч", "Ц", "Ы", "Ч"),
+    "leftfinger3": ("3", "№", "у", "в", "с", "У", "В", "С"),
+    "leftfinger2": ("4", ";", "5", "%", "к", "а", "м", "е", "п", "и", "К", "А", "М", "Е", "П", "И"),
+    "leftfinger1": (),  # пробел — не учитываем в нагрузке
+    "rightfinger2": ("6", ":", "7", "?", "н", "р", "т", "г", "о", "ь", "Н", "Р", "Т", "Г", "О", "Ь"),
+    "rightfinger3": ("8", "*", "ш", "л", "б", "Ш", "Л", "Б"),
+    "rightfinger4": ("9", "(", "щ", "д", "ю", "Щ", "Д", "Ю"),
+    "rightfinger5": ("0", ")", "-", "_", "=", "+", "з", "ж", ".", ",", "х", "э", "ъ", "З", "Ж", "Х", "Э", "Ъ", "/", "\\", "[", "]", "{", "}", "`", "~"),
 }
 
-KEYBOARD_FINGER_QWERTY_DOP = {
-    "leftfinger5": ("!",),
-    "leftfinger4": ('"',),
-    "leftfinger3": ("№",),
-    "leftfinger2": (";", "%"),
-    "rightfiber2": (":", "?"),
-    "rightfinger3": ("*",),
-    "rightfinger4": ("(",),
-    "rightfinger5": (")", "_", "+", "/", ","),
-}
+QWERTY_FINGER_COUNT = {f"leftfinger{i}": 0 for i in range(1, 6)}
+QWERTY_FINGER_COUNT.update({f"rightfinger{i}": 0 for i in range(1, 6)})
+# rightfinger1 — правый большой — используется только для пробела → 0 всегда
 
-QWERTY_FINGER_COUNT = {
-    "leftfinger5": 0,
-    "leftfinger4": 0,
-    "leftfinger3": 0,
-    "leftfinger2": 0,
-    "leftfinger1": 0,
-    "rightfinger1": 0,
-    "rightfinger2": 0,
-    "rightfinger3": 0,
-    "rightfinger4": 0,
-    "rightfinger5": 0,
-}
-
-HOME_KEYS_QWERTY = {"ф", "ы", "в", "а", "о", "л", "д", "ж"}
+HOME_KEYS_QWERTY = {"ф", "ы", "в", "а", "о", "л", "д", "ж", "Ф", "Ы", "В", "А", "О", "Л", "Д", "Ж"}
 
 KEY_GRID_QWERTY = {
     # Row 0 — top
-    "й": (0, 0), "ц": (1, 0), "у": (2, 0), "к": (3, 0), "е": (4, 0), "н": (5, 0),
-    "г": (6, 0), "ш": (7, 0), "щ": (8, 0), "з": (9, 0), "х": (10, 0), "ъ": (11, 0),
-    "п": (4, 0), "р": (5, 0),
+    "ё": (0, 0), "1": (0, 0), "!": (0, 0),
+    "2": (1, 0), "\"": (1, 0),
+    "3": (2, 0), "№": (2, 0),
+    "4": (3, 0), ";": (3, 0),
+    "5": (4, 0), "%": (4, 0),
+    "6": (5, 0), ":": (5, 0),
+    "7": (6, 0), "?": (6, 0),
+    "8": (7, 0), "*": (7, 0),
+    "9": (8, 0), "(": (8, 0),
+    "0": (9, 0), ")": (9, 0),
+    "-": (10, 0), "_": (10, 0),
+    "=": (11, 0), "+": (11, 0),
+
+    "й": (0, 0), "Й": (0, 0),
+    "ц": (1, 0), "Ц": (1, 0),
+    "у": (2, 0), "У": (2, 0),
+    "к": (3, 0), "К": (3, 0),
+    "е": (4, 0), "Е": (4, 0),
+    "н": (5, 0), "Н": (5, 0),
+    "г": (6, 0), "Г": (6, 0),
+    "ш": (7, 0), "Ш": (7, 0),
+    "щ": (8, 0), "Щ": (8, 0),
+    "з": (9, 0), "З": (9, 0),
+    "х": (10, 0), "Х": (10, 0),
+    "ъ": (11, 0), "Ъ": (11, 0),
 
     # Row 1 — home
-    "ф": (0, 1), "ы": (1, 1), "в": (2, 1), "а": (3, 1),
-    "о": (6, 1), "л": (7, 1), "д": (8, 1), "ж": (9, 1),
+    "ф": (0, 1), "Ф": (0, 1),
+    "ы": (1, 1), "Ы": (1, 1),
+    "в": (2, 1), "В": (2, 1),
+    "а": (3, 1), "А": (3, 1),
+    "о": (6, 1), "О": (6, 1),
+    "л": (7, 1), "Л": (7, 1),
+    "д": (8, 1), "Д": (8, 1),
+    "ж": (9, 1), "Ж": (9, 1),
 
     # Row 2 — bottom
-    "я": (0, 2), "ч": (1, 2), "с": (2, 2), "м": (3, 2), "и": (4, 2), "т": (5, 2),
-    "ь": (6, 2), "б": (7, 2), "ю": (8, 2), ".": (9, 2), ",": (10, 2),
+    "я": (0, 2), "Я": (0, 2),
+    "ч": (1, 2), "Ч": (1, 2),
+    "с": (2, 2), "С": (2, 2),
+    "м": (3, 2), "М": (3, 2),
+    "и": (4, 2), "И": (4, 2),
+    "т": (5, 2), "Т": (5, 2),
+    "ь": (6, 2), "Ь": (6, 2),
+    "б": (7, 2), "Б": (7, 2),
+    "ю": (8, 2), "Ю": (8, 2),
+    ".": (9, 2), ",": (10, 2),
+    "э": (11, 2), "Э": (11, 2),
+    "/": (10, 2), "\\": (11, 2),
+    "[": (12, 0), "]": (12, 0),
+    "{": (12, 0), "}": (12, 0),
+    "`": (13, 0), "~": (13, 0),
 }
 
-VALID_KEYS_QWERTY = set(KEY_GRID_QWERTY.keys()) | {" "}
+VALID_KEYS_QWERTY = set(KEY_GRID_QWERTY.keys())
 
 
 # ====================== VYZOV ======================
 
-KEYBOARD_FINGER_VYZOV = {
-    "leftfinger5": ("ч", "ш", "щ", "ъ", "х"),
-    "leftfinger4": ("и", "ы", "ь", "э"),
-    "leftfinger3": ("е", "у", "ю", "я"),
-    "leftfinger2": ("а", "к", "м", "с"),
-    "leftfinger1": (" ",),
-    "rightfinger2": ("н", "т", "г", "ф"),
-    "rightfinger3": ("д", "в", "п"),
-    "rightfinger4": ("л", "р", "о"),
-    "rightfinger5": ("б", "ж", "з", "й", "ц"),
+KEYBOARD_VYZOV = {
+    "leftfinger5": ("ч", "ш", "щ", "ъ", "х", "Ч", "Ш", "Щ", "Ъ", "Х", "1", "!", "q", "Q"),
+    "leftfinger4": ("и", "ы", "ь", "э", "И", "Ы", "Ь", "Э", "2", "@", "w", "W"),
+    "leftfinger3": ("е", "у", "ю", "я", "Е", "У", "Ю", "Я", "3", "#", "e", "E"),
+    "leftfinger2": ("а", "к", "м", "с", "А", "К", "М", "С", "4", "$", "r", "R"),
+    "leftfinger1": (),
+    "rightfinger2": ("н", "т", "г", "ф", "Н", "Т", "Г", "Ф", "5", "%", "t", "T"),
+    "rightfinger3": ("д", "в", "п", "Д", "В", "П", "6", "^", "y", "Y"),
+    "rightfinger4": ("л", "р", "о", "Л", "Р", "О", "7", "&", "u", "U"),
+    "rightfinger5": ("б", "ж", "з", "й", "ц", "Б", "Ж", "З", "Й", "Ц", "8", "*", "9", "(", "0", ")", "-", "_", "=", "+", "i", "I", "o", "O", "p", "P", "[", "]", "{", "}", "\\", "|", "/", "?", ".", ","),
 }
 
-KEYBOARD_FINGER_VYZOV_DOP = {
-    "leftfinger5": ("%", "Q", "W"),
-    "leftfinger4": ("7", "S", "D"),
-    "leftfinger3": ("5", "E", "R"),
-    "leftfinger2": ("3", "1", "A"),
-    "rightfinger2": ("9", "0", "T", "Y"),
-    "rightfinger3": ("2", "F", "G"),
-    "rightfinger4": ("4", "H", "J"),
-    "rightfinger5": ("6", "8", "#", "Z", "X"),
-}
-
-VYZOV_FINGER_COUNT = {
-    "leftfinger5": 0,
-    "leftfinger4": 0,
-    "leftfinger3": 0,
-    "leftfinger2": 0,
-    "leftfinger1": 0,
-    "rightfinger1": 0,
-    "rightfinger2": 0,
-    "rightfinger3": 0,
-    "rightfinger4": 0,
-    "rightfinger5": 0,
-}
-
-HOME_KEYS_VYZOV = {"ч", "и", "е", "а", "н", "т", "с", "б"}
-HOME_ROW_VYZOV = ["ч", "и", "е", "а", "н", "т", "с", "б"]
-
+HOME_KEYS_VYZOV = {"ч", "и", "е", "а", "н", "т", "с", "б", "Ч", "И", "Е", "А", "Н", "Т", "С", "Б"}
 FINGER_TO_COL_VYZOV = {
-    "leftfinger5": 0,
-    "leftfinger4": 1,
-    "leftfinger3": 2,
-    "leftfinger2": 3,
-    "rightfinger2": 4,
-    "rightfinger3": 5,
-    "rightfinger4": 6,
-    "rightfinger5": 7,
+    "leftfinger5": 0, "leftfinger4": 1, "leftfinger3": 2, "leftfinger2": 3,
+    "rightfinger2": 4, "rightfinger3": 5, "rightfinger4": 6, "rightfinger5": 7,
 }
-
 KEY_GRID_VYZOV = {}
-for finger, chars in KEYBOARD_FINGER_VYZOV.items():
-    if finger in ("leftfinger1", "rightfinger1"):
+for finger, chars in KEYBOARD_VYZOV.items():
+    if not chars or finger == "leftfinger1":
         continue
     col = FINGER_TO_COL_VYZOV.get(finger)
     if col is None:
         continue
-    for ch in (chars if isinstance(chars, (list, tuple)) else [chars]):
-        if ch == " ":
-            continue
-        row = 1 if ch in HOME_KEYS_VYZOV else 2
+    for ch in chars:
+        row = 1 if ch.lower() in {c.lower() for c in HOME_KEYS_VYZOV} else (2 if ch.islower() or ch.isdigit() or ch in "ёъыьэ" else 0)
         KEY_GRID_VYZOV[ch] = (col, row)
 
-for finger, chars in KEYBOARD_FINGER_VYZOV_DOP.items():
-    if finger in ("leftfinger1", "rightfinger1"):
-        continue
-    col = FINGER_TO_COL_VYZOV.get(finger)
-    if col is None:
-        continue
-    for ch in (chars if isinstance(chars, (list, tuple)) else [chars]):
-        KEY_GRID_VYZOV[ch] = (col, 0)
-
-VALID_KEYS_VYZOV = set(KEY_GRID_VYZOV.keys()) | {" "}
+VALID_KEYS_VYZOV = set(KEY_GRID_VYZOV.keys())
 
 
-# ====================== DICTOR ======================
+# ====================== DICTOR (исправлено: убраны дубли, добавлены регистры) ======================
 
-KEYBOARD_FINGER_DICTOR = {
-    "leftfinger5": ("у", "й", "ф", "я"),
-    "leftfinger4": ("и", "ы", "ч", "э"),
-    "leftfinger3": ("е", "в", "с", "ь"),
-    "leftfinger2": ("а", "к", "м", "п"),
-    "leftfinger1": (" ",),
-    "rightfinger2": ("т", "н", "р", "о"),
-    "rightfinger3": ("с", "ш", "л", "б"),
-    "rightfinger4": ("р", "щ", "д", "ю"),
-    "rightfinger5": ("й", "з", "ж", "х", "ъ"),
+KEYBOARD_DICTOR = {
+    "leftfinger5": ("у", "й", "ф", "я", "У", "Й", "Ф", "Я", "1", "!", "q", "Q"),
+    "leftfinger4": ("и", "ы", "ч", "э", "И", "Ы", "Ч", "Э", "2", "@", "w", "W"),
+    "leftfinger3": ("е", "в", "с", "ь", "Е", "В", "С", "Ь", "3", "#", "e", "E"),
+    "leftfinger2": ("а", "к", "м", "п", "А", "К", "М", "П", "4", "$", "r", "R"),
+    "leftfinger1": (),
+    "rightfinger2": ("т", "н", "р", "о", "Т", "Н", "Р", "О", "5", "%", "t", "T"),
+    "rightfinger3": ("д", "ш", "л", "б", "Д", "Ш", "Л", "Б", "6", "^", "y", "Y"),
+    "rightfinger4": ("з", "щ", "ж", "ю", "З", "Щ", "Ж", "Ю", "7", "&", "u", "U"),
+    "rightfinger5": ("г", "х", "ц", "ъ", "Г", "Х", "Ц", "Ъ", "8", "*", "9", "(", "0", ")", "-", "_", "=", "+", "i", "I", "o", "O", "p", "P", "[", "]", "{", "}", "\\", "|", "/", "?", ".", ","),
 }
 
-KEYBOARD_FINGER_DICTOR_DOP = {
-    "leftfinger5": ("%", "Q", "W"),
-    "leftfinger4": ("7", "S", "D"),
-    "leftfinger3": ("5", "E", "R"),
-    "leftfinger2": ("3", "1", "A"),
-    "rightfinger2": ("9", "0", "T", "Y"),
-    "rightfinger3": ("2", "F", "G"),
-    "rightfinger4": ("4", "H", "J"),
-    "rightfinger5": ("6", "8", "#", "Z", "X"),
-}
-
-DICTOR_FINGER_COUNT = {
-    "leftfinger5": 0,
-    "leftfinger4": 0,
-    "leftfinger3": 0,
-    "leftfinger2": 0,
-    "leftfinger1": 0,
-    "rightfinger1": 0,
-    "rightfinger2": 0,
-    "rightfinger3": 0,
-    "rightfinger4": 0,
-    "rightfinger5": 0,
-}
-
-HOME_KEYS_DICTOR = {"у", "и", "е", "а", "т", "с", "р", "й"}
-HOME_ROW_DICTOR = ["у", "и", "е", "а", "т", "с", "р", "й"]
-
-FINGER_TO_COL_DICTOR = {
-    "leftfinger5": 0,
-    "leftfinger4": 1,
-    "leftfinger3": 2,
-    "leftfinger2": 3,
-    "rightfinger2": 4,
-    "rightfinger3": 5,
-    "rightfinger4": 6,
-    "rightfinger5": 7,
-}
-
+HOME_KEYS_DICTOR = {"у", "и", "е", "а", "т", "д", "р", "г", "У", "И", "Е", "А", "Т", "Д", "Р", "Г"}
+FINGER_TO_COL_DICTOR = FINGER_TO_COL_VYZOV.copy()
 KEY_GRID_DICTOR = {}
-for finger, chars in KEYBOARD_FINGER_DICTOR.items():
-    if finger in ("leftfinger1", "rightfinger1"):
+for finger, chars in KEYBOARD_DICTOR.items():
+    if not chars or finger == "leftfinger1":
         continue
     col = FINGER_TO_COL_DICTOR.get(finger)
     if col is None:
         continue
-    for ch in (chars if isinstance(chars, (list, tuple)) else [chars]):
-        if ch == " ":
-            continue
-        row = 1 if ch in HOME_KEYS_DICTOR else 2
+    for ch in chars:
+        row = 1 if ch.lower() in {c.lower() for c in HOME_KEYS_DICTOR} else (2 if ch.islower() else 0)
         KEY_GRID_DICTOR[ch] = (col, row)
 
-for finger, chars in KEYBOARD_FINGER_DICTOR_DOP.items():
-    if finger in ("leftfinger1", "rightfinger1"):
-        continue
-    col = FINGER_TO_COL_DICTOR.get(finger)
-    if col is None:
-        continue
-    for ch in (chars if isinstance(chars, (list, tuple)) else [chars]):
-        KEY_GRID_DICTOR[ch] = (col, 0)
-
-VALID_KEYS_DICTOR = set(KEY_GRID_DICTOR.keys()) | {" "}
+VALID_KEYS_DICTOR = set(KEY_GRID_DICTOR.keys())
 
 
 # ====================== ANT ======================
 
-KEYBOARD_FINGER_ANT = {
-    "leftfinger5": ("ф", "ш", "э", "ё"),
-    "leftfinger4": ("ы", "ь", "ю", "б"),
-    "leftfinger3": ("а", "е", "и", "о"),
-    "leftfinger2": ("я", "р", "т", "ы"),  # Уточнить: "ы" уже в leftfinger4? → возможно опечатка
-    "leftfinger1": (" ",),
-    "rightfinger2": ("у", "л", "д", "ж"),
-    "rightfinger3": ("й", "к", "з", "х"),
-    "rightfinger4": ("ц", "щ", "ч", "п"),
-    "rightfinger5": ("м", "г", "в", "н"),
+KEYBOARD_ANT = {
+    "leftfinger5": ("ф", "ш", "э", "ё", "Ф", "Ш", "Э", "Ё", "1", "!", "q", "Q"),
+    "leftfinger4": ("ы", "ь", "ю", "б", "Ы", "Ь", "Ю", "Б", "2", "@", "w", "W"),
+    "leftfinger3": ("а", "е", "и", "о", "А", "Е", "И", "О", "3", "#", "e", "E"),
+    "leftfinger2": ("я", "р", "т", "Я", "Р", "Т", "4", "$", "r", "R"),
+    "leftfinger1": (),
+    "rightfinger2": ("у", "л", "д", "ж", "У", "Л", "Д", "Ж", "5", "%", "t", "T"),
+    "rightfinger3": ("й", "к", "з", "х", "Й", "К", "З", "Х", "6", "^", "y", "Y"),
+    "rightfinger4": ("ц", "щ", "ч", "п", "Ц", "Щ", "Ч", "П", "7", "&", "u", "U"),
+    "rightfinger5": ("м", "г", "в", "н", "М", "Г", "В", "Н", "8", "*", "9", "(", "0", ")", "-", "_", "=", "+", "i", "I", "o", "O", "p", "P", "[", "]", "{", "}", "\\", "|", "/", "?", ".", ","),
 }
 
-KEYBOARD_FINGER_ANT_DOP = {
-    "leftfinger5": ("E", "1", "!"),
-    "leftfinger4": ("2", "@"),
-    "leftfinger3": ("3", "№"),
-    "leftfinger2": ("4", "$"),
-    "rightfinger2": ("5", "%"),
-    "rightfinger3": ("6", "^"),
-    "rightfinger4": ("7", "&"),
-    "rightfinger5": ("8", "*", "9", "(", "0", ")", "-", "_", "+", "=", "|", "\\", "/", "?", ">", "<"),
-}
-
-ANT_FINGER_COUNT = {
-    "leftfinger5": 0,
-    "leftfinger4": 0,
-    "leftfinger3": 0,
-    "leftfinger2": 0,
-    "leftfinger1": 0,
-    "rightfinger1": 0,
-    "rightfinger2": 0,
-    "rightfinger3": 0,
-    "rightfinger4": 0,
-    "rightfinger5": 0,
-}
-
-HOME_KEYS_ANT = {"а", "е", "и", "о", "у", "л", "д", "ж"}  # Центральные клавиши основного ряда
-
-FINGER_TO_COL_ANT = {
-    "leftfinger5": 0,
-    "leftfinger4": 1,
-    "leftfinger3": 2,
-    "leftfinger2": 3,
-    "rightfinger2": 4,
-    "rightfinger3": 5,
-    "rightfinger4": 6,
-    "rightfinger5": 7,
-}
-
+HOME_KEYS_ANT = {"а", "е", "и", "о", "у", "л", "д", "ж", "А", "Е", "И", "О", "У", "Л", "Д", "Ж"}
+FINGER_TO_COL_ANT = FINGER_TO_COL_VYZOV.copy()
 KEY_GRID_ANT = {}
-for finger, chars in KEYBOARD_FINGER_ANT.items():
-    if finger in ("leftfinger1", "rightfinger1"):
+for finger, chars in KEYBOARD_ANT.items():
+    if not chars or finger == "leftfinger1":
         continue
     col = FINGER_TO_COL_ANT.get(finger)
     if col is None:
         continue
-    for ch in (chars if isinstance(chars, (list, tuple)) else [chars]):
-        if ch == " ":
-            continue
-        row = 1 if ch in HOME_KEYS_ANT else 2
+    for ch in chars:
+        row = 1 if ch.lower() in {c.lower() for c in HOME_KEYS_ANT} else (2 if ch.islower() else 0)
         KEY_GRID_ANT[ch] = (col, row)
 
-for finger, chars in KEYBOARD_FINGER_ANT_DOP.items():
-    if finger in ("leftfinger1", "rightfinger1"):
-        continue
-    col = FINGER_TO_COL_ANT.get(finger)
-    if col is None:
-        continue
-    for ch in (chars if isinstance(chars, (list, tuple)) else [chars]):
-        KEY_GRID_ANT[ch] = (col, 0)  # Доп символы — верхний ряд
-
-VALID_KEYS_ANT = set(KEY_GRID_ANT.keys()) | {" "}
+VALID_KEYS_ANT = set(KEY_GRID_ANT.keys())
 
 
 # ====================== RUSPHONE ======================
 
-KEYBOARD_FINGER_RUSPHONE = {
-    "leftfinger5": ("ю", "э", "я", "а"),
-    "leftfinger4": ("б", "ь", "з", "с"),
-    "leftfinger3": ("е", "р", "д", "ц"),
-    "leftfinger2": ("т", "ф", "г", "х"),
-    "leftfinger1": (" ",),
-    "rightfinger2": ("у", "й", "к", "л"),
-    "rightfinger3": ("и", "о", "п", "ш"),
-    "rightfinger4": ("щ", "ч", "ж", "м"),
-    "rightfinger5": ("н", "в", "ы", "ё"),
+KEYBOARD_RUSPHONE = {
+    "leftfinger5": ("ю", "э", "я", "а", "Ю", "Э", "Я", "А", "1", "!", "q", "Q"),
+    "leftfinger4": ("б", "ь", "з", "с", "Б", "Ь", "З", "С", "2", "@", "w", "W"),
+    "leftfinger3": ("е", "р", "д", "ц", "Е", "Р", "Д", "Ц", "3", "#", "e", "E"),
+    "leftfinger2": ("т", "ф", "г", "х", "Т", "Ф", "Г", "Х", "4", "$", "r", "R"),
+    "leftfinger1": (),
+    "rightfinger2": ("у", "й", "к", "л", "У", "Й", "К", "Л", "5", "%", "t", "T"),
+    "rightfinger3": ("и", "о", "п", "ш", "И", "О", "П", "Ш", "6", "^", "y", "Y"),
+    "rightfinger4": ("щ", "ч", "ж", "м", "Щ", "Ч", "Ж", "М", "7", "&", "u", "U"),
+    "rightfinger5": ("н", "в", "ы", "ё", "Н", "В", "Ы", "Ё", "8", "*", "9", "(", "0", ")", "-", "_", "=", "+", "i", "I", "o", "O", "p", "P", "[", "]", "{", "}", "\\", "|", "/", "?", ".", ","),
 }
 
-KEYBOARD_FINGER_RUSPHONE_DOP = {
-    "leftfinger5": ("Ю", "1", "!"),
-    "leftfinger4": ("2", "@"),
-    "leftfinger3": ("3", "№"),
-    "leftfinger2": ("4", "$"),
-    "rightfinger2": ("5", "%"),
-    "rightfinger3": ("6", "^"),
-    "rightfinger4": ("7", "&"),
-    "rightfinger5": ("8", "*", "9", "(", "0", ")", "-", "_", "+", "=", "|", "\\", "/", "?", ">", "<"),
-}
-
-RUSPHONE_FINGER_COUNT = {
-    "leftfinger5": 0,
-    "leftfinger4": 0,
-    "leftfinger3": 0,
-    "leftfinger2": 0,
-    "leftfinger1": 0,
-    "rightfinger1": 0,
-    "rightfinger2": 0,
-    "rightfinger3": 0,
-    "rightfinger4": 0,
-    "rightfinger5": 0,
-}
-
-HOME_KEYS_RUSPHONE = {"е", "р", "д", "ц", "у", "й", "к", "л"}  # Центральные клавиши основного ряда
-
-FINGER_TO_COL_RUSPHONE = {
-    "leftfinger5": 0,
-    "leftfinger4": 1,
-    "leftfinger3": 2,
-    "leftfinger2": 3,
-    "rightfinger2": 4,
-    "rightfinger3": 5,
-    "rightfinger4": 6,
-    "rightfinger5": 7,
-}
-
+HOME_KEYS_RUSPHONE = {"е", "р", "д", "ц", "у", "й", "к", "л", "Е", "Р", "Д", "Ц", "У", "Й", "К", "Л"}
+FINGER_TO_COL_RUSPHONE = FINGER_TO_COL_VYZOV.copy()
 KEY_GRID_RUSPHONE = {}
-for finger, chars in KEYBOARD_FINGER_RUSPHONE.items():
-    if finger in ("leftfinger1", "rightfinger1"):
+for finger, chars in KEYBOARD_RUSPHONE.items():
+    if not chars or finger == "leftfinger1":
         continue
     col = FINGER_TO_COL_RUSPHONE.get(finger)
     if col is None:
         continue
-    for ch in (chars if isinstance(chars, (list, tuple)) else [chars]):
-        if ch == " ":
-            continue
-        row = 1 if ch in HOME_KEYS_RUSPHONE else 2
+    for ch in chars:
+        row = 1 if ch.lower() in {c.lower() for c in HOME_KEYS_RUSPHONE} else (2 if ch.islower() else 0)
         KEY_GRID_RUSPHONE[ch] = (col, row)
 
-for finger, chars in KEYBOARD_FINGER_RUSPHONE_DOP.items():
-    if finger in ("leftfinger1", "rightfinger1"):
-        continue
-    col = FINGER_TO_COL_RUSPHONE.get(finger)
-    if col is None:
-        continue
-    for ch in (chars if isinstance(chars, (list, tuple)) else [chars]):
-        KEY_GRID_RUSPHONE[ch] = (col, 0)  # Доп символы — верхний ряд
-
-VALID_KEYS_RUSPHONE = set(KEY_GRID_RUSPHONE.keys()) | {" "}
+VALID_KEYS_RUSPHONE = set(KEY_GRID_RUSPHONE.keys())
 
 
 # ====================== SKOROPIS ======================
 
-KEYBOARD_FINGER_SKOROPIS = {
-    "leftfinger5": ("ф", "э", "ц", "у"),
-    "leftfinger4": ("ь", "я", "и", "е"),
-    "leftfinger3": ("з", "в", "о", "а"),
-    "leftfinger2": ("с", "д", "л", "т"),
-    "leftfinger1": (" ",),
-    "rightfinger2": ("к", "п", "ш", "р"),
-    "rightfinger3": ("г", "ж", "щ", "й"),
-    "rightfinger4": ("ч", "х", "б", "м"),
-    "rightfinger5": ("н", "ы", "ё", "ю"),
+KEYBOARD_SKOROPIS = {
+    "leftfinger5": ("ф", "э", "ц", "у", "Ф", "Э", "Ц", "У", "1", "!", "q", "Q"),
+    "leftfinger4": ("ь", "я", "и", "е", "Ь", "Я", "И", "Е", "2", "@", "w", "W"),
+    "leftfinger3": ("з", "в", "о", "а", "З", "В", "О", "А", "3", "#", "e", "E"),
+    "leftfinger2": ("с", "д", "л", "т", "С", "Д", "Л", "Т", "4", "$", "r", "R"),
+    "leftfinger1": (),
+    "rightfinger2": ("к", "п", "ш", "р", "К", "П", "Ш", "Р", "5", "%", "t", "T"),
+    "rightfinger3": ("г", "ж", "щ", "й", "Г", "Ж", "Щ", "Й", "6", "^", "y", "Y"),
+    "rightfinger4": ("ч", "х", "б", "м", "Ч", "Х", "Б", "М", "7", "&", "u", "U"),
+    "rightfinger5": ("н", "ы", "ё", "ю", "Н", "Ы", "Ё", "Ю", "8", "*", "9", "(", "0", ")", "-", "_", "=", "+", "i", "I", "o", "O", "p", "P", "[", "]", "{", "}", "\\", "|", "/", "?", ".", ","),
 }
 
-KEYBOARD_FINGER_SKOROPIS_DOP = {
-    "leftfinger5": ("*", "1", "!"),
-    "leftfinger4": ("2", "@"),
-    "leftfinger3": ("3", "№"),
-    "leftfinger2": ("4", "$"),
-    "rightfinger2": ("5", "%"),
-    "rightfinger3": ("6", "^"),
-    "rightfinger4": ("7", "&"),
-    "rightfinger5": ("8", "*", "9", "(", "0", ")", "-", "_", "+", "=", "|", "\\", "/", "?", ">", "<"),
-}
-
-SKOROPIS_FINGER_COUNT = {
-    "leftfinger5": 0,
-    "leftfinger4": 0,
-    "leftfinger3": 0,
-    "leftfinger2": 0,
-    "leftfinger1": 0,
-    "rightfinger1": 0,
-    "rightfinger2": 0,
-    "rightfinger3": 0,
-    "rightfinger4": 0,
-    "rightfinger5": 0,
-}
-
-HOME_KEYS_SKOROPIS = {"ь", "я", "и", "е", "к", "п", "ш", "р"}  # Центральные клавиши основного ряда
-
-FINGER_TO_COL_SKOROPIS = {
-    "leftfinger5": 0,
-    "leftfinger4": 1,
-    "leftfinger3": 2,
-    "leftfinger2": 3,
-    "rightfinger2": 4,
-    "rightfinger3": 5,
-    "rightfinger4": 6,
-    "rightfinger5": 7,
-}
-
+HOME_KEYS_SKOROPIS = {"ь", "я", "и", "е", "к", "п", "ш", "р", "Ь", "Я", "И", "Е", "К", "П", "Ш", "Р"}
+FINGER_TO_COL_SKOROPIS = FINGER_TO_COL_VYZOV.copy()
 KEY_GRID_SKOROPIS = {}
-for finger, chars in KEYBOARD_FINGER_SKOROPIS.items():
-    if finger in ("leftfinger1", "rightfinger1"):
+for finger, chars in KEYBOARD_SKOROPIS.items():
+    if not chars or finger == "leftfinger1":
         continue
     col = FINGER_TO_COL_SKOROPIS.get(finger)
     if col is None:
         continue
-    for ch in (chars if isinstance(chars, (list, tuple)) else [chars]):
-        if ch == " ":
-            continue
-        row = 1 if ch in HOME_KEYS_SKOROPIS else 2
+    for ch in chars:
+        row = 1 if ch.lower() in {c.lower() for c in HOME_KEYS_SKOROPIS} else (2 if ch.islower() else 0)
         KEY_GRID_SKOROPIS[ch] = (col, row)
 
-for finger, chars in KEYBOARD_FINGER_SKOROPIS_DOP.items():
-    if finger in ("leftfinger1", "rightfinger1"):
-        continue
-    col = FINGER_TO_COL_SKOROPIS.get(finger)
-    if col is None:
-        continue
-    for ch in (chars if isinstance(chars, (list, tuple)) else [chars]):
-        KEY_GRID_SKOROPIS[ch] = (col, 0)  # Доп символы — верхний ряд
-
-VALID_KEYS_SKOROPIS = set(KEY_GRID_SKOROPIS.keys()) | {" "}
+VALID_KEYS_SKOROPIS = set(KEY_GRID_SKOROPIS.keys())
 
 
-# ====================== ZUBACHEW ======================
+# ====================== ZUBACHEW (копия ANT) ======================
 
-# Идентична Ant — создаём копию для единообразия
-KEYBOARD_FINGER_ZUBACHEW = KEYBOARD_FINGER_ANT.copy()
-KEYBOARD_FINGER_ZUBACHEW_DOP = KEYBOARD_FINGER_ANT_DOP.copy()
-ZUBACHEW_FINGER_COUNT = {k: 0 for k in ANT_FINGER_COUNT}
+KEYBOARD_ZUBACHEW = KEYBOARD_ANT.copy()
 HOME_KEYS_ZUBACHEW = HOME_KEYS_ANT.copy()
 FINGER_TO_COL_ZUBACHEW = FINGER_TO_COL_ANT.copy()
 KEY_GRID_ZUBACHEW = KEY_GRID_ANT.copy()
 VALID_KEYS_ZUBACHEW = VALID_KEYS_ANT.copy()
 
-IGNORE_CHARS = set(" \t\n\r.,!?;:\"'()[]{}-_+=*/\\|@#$%^&`~")
+# FINGER_TO_IDX для удобных переборов
+FINGER_TO_IDX = {
+    "leftfinger5": 0,
+    "leftfinger4": 1,
+    "leftfinger3": 2,
+    "leftfinger2": 3,
+    "leftfinger1": 4,
+    "rightfinger1": 5,
+    "rightfinger2": 6,
+    "rightfinger3": 7,
+    "rightfinger4": 8,
+    "rightfinger5": 9,
+}

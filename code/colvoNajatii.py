@@ -17,53 +17,22 @@ from function import (
     calculate_penalties_rusphone,
     calculate_penalties_skoropis,
     calculate_penalties_zubachew,
+    count_convenient_rolls_qwerty,
+    count_convenient_rolls_vyzov,
+    count_convenient_rolls_dictor,
+    count_convenient_rolls_ant,
+    count_convenient_rolls_rusphone,
+    count_convenient_rolls_skoropis,
+    count_convenient_rolls_zubachew,
+    filter_single_char_words,
 )
 
 if __name__ == "__main__":
     with open("voina_i_mir.txt", "r", encoding="utf-8") as f:
         text = f.read()
 
-    # QWERTY
-    qwerty_load = count_finger_load_qwerty(text)
-    left_qwerty = load_hand_left(qwerty_load)
-    right_qwerty = load_hand_right(qwerty_load)
-    penalties_qwerty = calculate_penalties_qwerty(text)
-
-    # VYZOV
-    vyzov_load = count_finger_load_vyzov(text)
-    left_vyzov = load_hand_left(vyzov_load)
-    right_vyzov = load_hand_right(vyzov_load)
-    penalties_vyzov = calculate_penalties_vyzov(text)
-
-    # DICTOR
-    dictor_load = count_finger_load_dictor(text)
-    left_dictor = load_hand_left(dictor_load)
-    right_dictor = load_hand_right(dictor_load)
-    penalties_dictor = calculate_penalties_dictor(text)
-
-    # ANT
-    ant_load = count_finger_load_ant(text)
-    left_ant = load_hand_left(ant_load)
-    right_ant = load_hand_right(ant_load)
-    penalties_ant = calculate_penalties_ant(text)
-
-    # RUSPHONE
-    rusphone_load = count_finger_load_rusphone(text)
-    left_rusphone = load_hand_left(rusphone_load)
-    right_rusphone = load_hand_right(rusphone_load)
-    penalties_rusphone = calculate_penalties_rusphone(text)
-
-    # SKOROPIS
-    skoropis_load = count_finger_load_skoropis(text)
-    left_skoropis = load_hand_left(skoropis_load)
-    right_skoropis = load_hand_right(skoropis_load)
-    penalties_skoropis = calculate_penalties_skoropis(text)
-
-    # ZUBACHEW
-    zubachew_load = count_finger_load_zubachew(text)
-    left_zubachew = load_hand_left(zubachew_load)
-    right_zubachew = load_hand_right(zubachew_load)
-    penalties_zubachew = calculate_penalties_zubachew(text)
+    # Удаляем односимвольные СЛОВА (союзы), но не символы!
+    text = filter_single_char_words(text)
 
     fingers = [
         "левый мизинец", "левый безымянный", "левый средний",
@@ -72,66 +41,99 @@ if __name__ == "__main__":
         "правый средний", "правый безымянный", "правый мизинец"
     ]
 
-    print("=" * 68)
-    print("ЙЦУКЕН")
-    print("=" * 68)
-    print(f"Нагрузка на левую руку: {left_qwerty}%")
-    print(f"Нагрузка на правую руку: {right_qwerty}%")
-    print("Количество нажатий каждым пальцем:")
-    print(dict(zip(fingers, qwerty_load)))
-    print("Штрафы:", penalties_qwerty)
+    # Собираем данные один раз
+    layouts_data = {
+        "ЙЦУКЕН": {
+            "load": count_finger_load_qwerty(text),
+            "penalties": calculate_penalties_qwerty(text),
+            "convenient": count_convenient_rolls_qwerty(text),
+        },
+        "ВЫЗОВ": {
+            "load": count_finger_load_vyzov(text),
+            "penalties": calculate_penalties_vyzov(text),
+            "convenient": count_convenient_rolls_vyzov(text),
+        },
+        "DICTOR": {
+            "load": count_finger_load_dictor(text),
+            "penalties": calculate_penalties_dictor(text),
+            "convenient": count_convenient_rolls_dictor(text),
+        },
+        "ANT": {
+            "load": count_finger_load_ant(text),
+            "penalties": calculate_penalties_ant(text),
+            "convenient": count_convenient_rolls_ant(text),
+        },
+        "RUSPHONE": {
+            "load": count_finger_load_rusphone(text),
+            "penalties": calculate_penalties_rusphone(text),
+            "convenient": count_convenient_rolls_rusphone(text),
+        },
+        "SKOROPIS": {
+            "load": count_finger_load_skoropis(text),
+            "penalties": calculate_penalties_skoropis(text),
+            "convenient": count_convenient_rolls_skoropis(text),
+        },
+        "ZUBACHEW": {
+            "load": count_finger_load_zubachew(text),
+            "penalties": calculate_penalties_zubachew(text),
+            "convenient": count_convenient_rolls_zubachew(text),
+        },
+    }
 
-    print("=" * 68)
-    print("ВЫЗОВ")
-    print("=" * 68)
-    print(f"Нагрузка на левую руку: {left_vyzov}%")
-    print(f"Нагрузка на правую руку: {right_vyzov}%")
-    print("Количество нажатий каждым пальцем:")
-    print(dict(zip(fingers, vyzov_load)))
-    print("Штрафы:", penalties_vyzov)
+    # Добавляем проценты левой/правой руки
+    for data in layouts_data.values():
+        load = data["load"]
+        data["left"] = load_hand_left(load)
+        data["right"] = load_hand_right(load)
 
-    print("=" * 68)
-    print("DICTOR")
-    print("=" * 68)
-    print(f"Нагрузка на левую руку: {left_dictor}%")
-    print(f"Нагрузка на правую руку: {right_dictor}%")
-    print("Количество нажатий каждым пальцем:")
-    print(dict(zip(fingers, dictor_load)))
-    print("Штрафы:", penalties_dictor)
+    # === ТЕРМИНАЛЬНОЕ МЕНЮ ===
+    while True:
+        print("\n" + "="*50)
+        print("1. ЙЦУКЕН")
+        print("2. ВЫЗОВ")
+        print("3. DICTOR")
+        print("4. ANT")
+        print("5. RUSPHONE")
+        print("6. SKOROPIS")
+        print("7. ZUBACHEW")
+        print("8. Все сразу")
+        print("0. Выйти")
+        print("-"*50)
+        
+        try:
+            choice = input("Выберите раскладку (0–8): ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\n\n До свидания!")
+            break
 
-    print("=" * 68)
-    print("ANT")
-    print("=" * 68)
-    print(f"Нагрузка на левую руку: {left_ant}%")
-    print(f"Нагрузка на правую руку: {right_ant}%")
-    print("Количество нажатий каждым пальцем:")
-    print(dict(zip(fingers, ant_load)))
-    print("Штрафы:", penalties_ant)
-
-    print("=" * 68)
-    print("RUSPHONE")
-    print("=" * 68)
-    print(f"Нагрузка на левую руку: {left_rusphone}%")
-    print(f"Нагрузка на правую руку: {right_rusphone}%")
-    print("Количество нажатий каждым пальцем:")
-    print(dict(zip(fingers, rusphone_load)))
-    print("Штрафы:", penalties_rusphone)
-
-    print("=" * 68)
-    print("SKOROPIS")
-    print("=" * 68)
-    print(f"Нагрузка на левую руку: {left_skoropis}%")
-    print(f"Нагрузка на правую руку: {right_skoropis}%")
-    print("Количество нажатий каждым пальцем:")
-    print(dict(zip(fingers, skoropis_load)))
-    print("Штрафы:", penalties_skoropis)
-
-    print("=" * 68)
-    print("ZUBACHEW")
-    print("=" * 68)
-    print(f"Нагрузка на левую руку: {left_zubachew}%")
-    print(f"Нагрузка на правую руку: {right_zubachew}%")
-    print("Количество нажатий каждым пальцем:")
-    print(dict(zip(fingers, zubachew_load)))
-    print("Штрафы:", penalties_zubachew)
-    print("=" * 68)
+        if choice == "0":
+            print(" До свидания!")
+            break
+        elif choice == "8":
+            for name, data in layouts_data.items():
+                print("\n" + "="*68)
+                print(name)
+                print("="*68)
+                print(f"Нагрузка: левая — {data['left']}%, правая — {data['right']}%")
+                print("Нажатий каждым пальцем:")
+                for finger, cnt in zip(fingers, data["load"]):
+                    print(f"  • {finger}: {cnt}")
+                print(f"Штрафы за смещение: {data['penalties']}")
+                print(f"Удобных переборов: {data['convenient']}")
+            print("\n" + "="*68)
+        elif choice in "1234567":
+            names = ["ЙЦУКЕН", "ВЫЗОВ", "DICTOR", "ANT", "RUSPHONE", "SKOROPIS", "ZUBACHEW"]
+            name = names[int(choice)-1]
+            data = layouts_data[name]
+            print("\n" + "="*68)
+            print(f" {name}")
+            print("="*68)
+            print(f"Нагрузка: левая — {data['left']}%, правая — {data['right']}%")
+            print("Нажатий каждым пальцем:")
+            for finger, cnt in zip(fingers, data["load"]):
+                print(f"  • {finger}: {cnt}")
+            print(f"Штрафы за смещение: {data['penalties']}")
+            print(f"Удобных переборов: {data['convenient']}")
+            print("="*68)
+        else:
+            print(" Неверный ввод. Введите число от 0 до 8.")
