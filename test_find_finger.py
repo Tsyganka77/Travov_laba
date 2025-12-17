@@ -6,7 +6,7 @@ from function import find_finger
 
 
 class TestFindFinger:
-    """Тесты для функции find_finger с использованием реальных раскладок."""
+    """Тесты для функции find_finger"""
 
     def test_qwerty_char_in_tuple_lowercase(self):
         """Символы в нижнем регистре, хранятся в кортеже"""
