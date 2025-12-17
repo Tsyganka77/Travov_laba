@@ -8,7 +8,7 @@ from keyboard import (
     KEYBOARD_SKOROPIS,
     KEYBOARD_ZUBACHEW,
 )
-from function import count_finger_load  # Замените 'analysis' на имя вашего файла
+from function import count_finger_load  
 
 # Словарь всех раскладок для параметризации
 ALL_LAYOUTS = {
