@@ -1,543 +1,563 @@
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
-from collections import defaultdict
-from typing import Dict, List, Tuple, Any
-import os
+from pathlib import Path
+import sys
+import warnings
+
+warnings.filterwarnings('ignore')
 
 from function import (
     count_finger_load_qwerty, count_finger_load_vyzov, count_finger_load_dictor,
     count_finger_load_ant, count_finger_load_rusphone, count_finger_load_skoropis,
-    count_finger_load_zubachew,
-    load_hand_left, load_hand_right,
-    calculate_penalties_qwerty, calculate_penalties_vyzov, calculate_penalties_dictor,
-    calculate_penalties_ant, calculate_penalties_rusphone, calculate_penalties_skoropis,
-    calculate_penalties_zubachew,
-    count_convenient_rolls_qwerty, count_convenient_rolls_vyzov, count_convenient_rolls_dictor,
-    count_convenient_rolls_ant, count_convenient_rolls_rusphone, count_convenient_rolls_skoropis,
-    count_convenient_rolls_zubachew,
-    filter_single_char_words
+    count_finger_load_zubachew, calculate_penalties_qwerty, calculate_penalties_vyzov,
+    calculate_penalties_dictor, calculate_penalties_ant, calculate_penalties_rusphone,
+    calculate_penalties_skoropis, calculate_penalties_zubachew,
+    analyze_rolls_qwerty, analyze_rolls_vyzov, analyze_rolls_dictor,
+    analyze_rolls_ant, analyze_rolls_rusphone, analyze_rolls_skoropis,
+    analyze_rolls_zubachew, load_text, filter_single_char_words
 )
 
 LAYOUT_COLORS = {
-    "ЙЦУКЕН": "#FF0000",  # Красный
-    "RUSPHONE": "#FF69B4",  # Розовый
-    "DICTOR": "#FFFF00",  # Жёлтый
-    "SKOROPIS": "#00FF00",  # Зелёный
-    "ZUBACHEW": "#0000FF",  # Синий
-    "ВЫЗОВ": "#000000",  # Чёрный
-    "ANT": "#4169E1",  # Королевский синий
+    "ЙЦУКЕН": "#FF0000",  # красный
+    "ВЫЗОВ": "#000000",  # чёрный
+    "DICTOR": "#FFFF00",  # жёлтый
+    "ANT": "#3366FF",  # чуть другой синий как Зубачёв, т.к. близкая раскладка
+    "RUSPHONE": "#FF69B4",  # розовый
+    "SKOROPIS": "#00FF00",  # зелёный
+    "ZUBACHEW": "#0000FF",  # синий
 }
 
-LAYOUT_NAMES = {
+LAYOUT_NAMES_RU = {
     "ЙЦУКЕН": "ЙЦУКЕН",
     "ВЫЗОВ": "ВЫЗОВ",
-    "DICTOR": "ДИКТОР",
+    "DICTOR": "Диктор",
     "ANT": "ANT",
     "RUSPHONE": "Русская фонетическая",
     "SKOROPIS": "Скоропись",
-    "ZUBACHEW": "Зубачёв"
+    "ZUBACHEW": "Зубачёв",
 }
 
-LAYOUT_FUNCTIONS = {
-    "ЙЦУКЕН": {
-        "load": count_finger_load_qwerty,
-        "penalties": calculate_penalties_qwerty,
-        "convenient": count_convenient_rolls_qwerty,
-    },
-    "ВЫЗОВ": {
-        "load": count_finger_load_vyzov,
-        "penalties": calculate_penalties_vyzov,
-        "convenient": count_convenient_rolls_vyzov,
-    },
-    "DICTOR": {
-        "load": count_finger_load_dictor,
-        "penalties": calculate_penalties_dictor,
-        "convenient": count_convenient_rolls_dictor,
-    },
-    "ANT": {
-        "load": count_finger_load_ant,
-        "penalties": calculate_penalties_ant,
-        "convenient": count_convenient_rolls_ant,
-    },
-    "RUSPHONE": {
-        "load": count_finger_load_rusphone,
-        "penalties": calculate_penalties_rusphone,
-        "convenient": count_convenient_rolls_rusphone,
-    },
-    "SKOROPIS": {
-        "load": count_finger_load_skoropis,
-        "penalties": calculate_penalties_skoropis,
-        "convenient": count_convenient_rolls_skoropis,
-    },
-    "ZUBACHEW": {
-        "load": count_finger_load_zubachew,
-        "penalties": calculate_penalties_zubachew,
-        "convenient": count_convenient_rolls_zubachew,
-    },
+TEXT_FILES = {
+    "voina-i-mir.txt": "«Война и мир»",
+    "sortchbukw.csv": "sortchbukw",
+    "1grams-3.txt": "1grams-3"
 }
 
 
-def load_text_files():
-    texts = {}
-    file_paths = {
-        "voina-i-mir": "voina-i-mir.txt",
-        "sortchbukw": "sortchbukw.csv",
-        "1grams-3": "1grams-3.txt"
-    }
+class KeyboardAnalyzer:
 
-    for name, path in file_paths.items():
+    def __init__(self):
+        self.layouts = {
+            "ЙЦУКЕН": {
+                "load_func": count_finger_load_qwerty,
+                "penalty_func": calculate_penalties_qwerty,
+                "roll_analyzer": analyze_rolls_qwerty,
+                "color": LAYOUT_COLORS["ЙЦУКЕН"]
+            },
+            "ВЫЗОВ": {
+                "load_func": count_finger_load_vyzov,
+                "penalty_func": calculate_penalties_vyzov,
+                "roll_analyzer": analyze_rolls_vyzov,
+                "color": LAYOUT_COLORS["ВЫЗОВ"]
+            },
+            "DICTOR": {
+                "load_func": count_finger_load_dictor,
+                "penalty_func": calculate_penalties_dictor,
+                "roll_analyzer": analyze_rolls_dictor,
+                "color": LAYOUT_COLORS["DICTOR"]
+            },
+            "ANT": {
+                "load_func": count_finger_load_ant,
+                "penalty_func": calculate_penalties_ant,
+                "roll_analyzer": analyze_rolls_ant,
+                "color": LAYOUT_COLORS["ANT"]
+            },
+            "RUSPHONE": {
+                "load_func": count_finger_load_rusphone,
+                "penalty_func": calculate_penalties_rusphone,
+                "roll_analyzer": analyze_rolls_rusphone,
+                "color": LAYOUT_COLORS["RUSPHONE"]
+            },
+            "SKOROPIS": {
+                "load_func": count_finger_load_skoropis,
+                "penalty_func": calculate_penalties_skoropis,
+                "roll_analyzer": analyze_rolls_skoropis,
+                "color": LAYOUT_COLORS["SKOROPIS"]
+            },
+            "ZUBACHEW": {
+                "load_func": count_finger_load_zubachew,
+                "penalty_func": calculate_penalties_zubachew,
+                "roll_analyzer": analyze_rolls_zubachew,
+                "color": LAYOUT_COLORS["ZUBACHEW"]
+            },
+        }
+
+        self.finger_names = [
+            "Левый мизинец", "Левый безымянный", "Левый средний",
+            "Левый указательный", "Левый большой",
+            "Правый большой", "Правый указательный",
+            "Правый средний", "Правый безымянный", "Правый мизинец"
+        ]
+
+        self.finger_short = ["Л. М.", "Л. Б.", "Л. С.", "Л. У.", "Л. Бол.", "П. Бол.", "П. У.", "П. С.", "П. Б.", "П. М."]
+
+        self.results = {}
+        self.current_text = ""
+        self.text_name = ""
+
+    def load_and_process(self, filename):
         try:
-            if os.path.exists(path):
-                with open(path, 'r', encoding='utf-8') as f:
-                    texts[name] = f.read()
-                print(f"✓ Загружен файл: {path}")
-            else:
-                print(f"✗ Файл не найден: {path}")
-                texts[name] = ""
+            raw_text = load_text(filename)
+            self.current_text = filter_single_char_words(raw_text)
+            self.text_name = TEXT_FILES.get(filename, filename)
+            return True
         except Exception as e:
-            print(f"✗ Ошибка при загрузке {path}: {e}")
-            texts[name] = ""
-
-    return texts
-
-
-def analyze_text(text: str, layout_name: str) -> Dict[str, Any]:
-    if not text:
-        return {}
-
-    functions = LAYOUT_FUNCTIONS[layout_name]
-    filtered_text = filter_single_char_words(text)
-
-    load = functions["load"](filtered_text)
-    total_chars = sum(load)
-
-    left_percent = load_hand_left(load)
-    right_percent = load_hand_right(load)
-
-    both_hands_percent = 100 - (left_percent + right_percent)
-
-    penalties = functions["penalties"](filtered_text)
-    convenient_rolls = functions["convenient"](filtered_text)
-
-    return {
-        "name": layout_name,
-        "load": load,
-        "left_percent": left_percent,
-        "right_percent": right_percent,
-        "both_hands_percent": both_hands_percent,
-        "penalties": penalties,
-        "convenient_rolls": convenient_rolls,
-        "total_chars": total_chars,
-        "penalty_per_char": penalties / total_chars if total_chars > 0 else 0,
-        "rolls_per_char": convenient_rolls / total_chars if total_chars > 0 else 0,
-    }
-
-
-def plot_finger_load_comparison(results: Dict[str, Dict[str, Any]], filename: str = None):
-    fig, ax = plt.subplots(figsize=(14, 8))
-
-    fingers = [
-        "Л. мизинец", "Л. безымянный", "Л. средний", "Л. указательный", "Л. большой",
-        "П. большой", "П. указательный", "П. средний", "П. безымянный", "П. мизинец"
-    ]
-
-    x = np.arange(len(fingers))
-    width = 0.8 / len(results)
-
-    for i, (layout_name, data) in enumerate(results.items()):
-        if not data:
-            continue
-        offset = width * i - width * (len(results) - 1) / 2
-        ax.bar(x + offset, data["load"], width,
-               label=LAYOUT_NAMES.get(layout_name, layout_name),
-               color=LAYOUT_COLORS.get(layout_name, "#888888"),
-               alpha=0.7)
-
-    ax.set_xlabel('Пальцы', fontsize=12)
-    ax.set_ylabel('Количество нажатий', fontsize=12)
-    ax.set_title('Сравнение нагрузки на пальцы для разных раскладок', fontsize=14, fontweight='bold')
-    ax.set_xticks(x)
-    ax.set_xticklabels(fingers, rotation=45, ha='right')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-
-    plt.tight_layout()
-    if filename:
-        plt.savefig(filename, dpi=300, bbox_inches='tight')
-        print(f"График сохранён как {filename}")
-    plt.show()
-
-
-def plot_hand_distribution_pie(results: Dict[str, Dict[str, Any]], filename: str = None):
-    n_layouts = len(results)
-    if n_layouts == 0:
-        return
-
-    # Определяем размер сетки
-    if n_layouts <= 3:
-        cols = n_layouts
-        rows = 1
-    elif n_layouts <= 6:
-        cols = 3
-        rows = 2
-    else:
-        cols = 4
-        rows = 2
-
-    fig, axes = plt.subplots(rows, cols, figsize=(cols * 4, rows * 4))
-    if n_layouts == 1:
-        axes = np.array([axes])
-    axes = axes.flatten()
-
-    for idx, (layout_name, data) in enumerate(results.items()):
-        if idx >= len(axes):
-            break
-        if not data:
-            continue
-
-        ax = axes[idx]
-        sizes = [data["left_percent"], data["right_percent"], data["both_hands_percent"]]
-        labels = [f'Левая: {sizes[0]:.1f}%',
-                  f'Правая: {sizes[1]:.1f}%',
-                  f'Двуеручие: {sizes[2]:.1f}%']
-        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']
-
-        wedges, texts, autotexts = ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
-                                          startangle=90, textprops={'fontsize': 9})
-
-        for autotext in autotexts:
-            autotext.set_color('white')
-            autotext.set_fontweight('bold')
-
-        ax.set_title(f'{LAYOUT_NAMES.get(layout_name, layout_name)}\n', fontsize=11, fontweight='bold')
-
-    for idx in range(len(results), len(axes)):
-        axes[idx].set_visible(False)
-
-    plt.suptitle('Распределение нагрузки на руки (левая/правая/двуеручие)',
-                 fontsize=14, fontweight='bold', y=1.02)
-    plt.tight_layout()
-
-    if filename:
-        plt.savefig(filename, dpi=300, bbox_inches='tight')
-        print(f"Круговые диаграммы сохранены как {filename}")
-    plt.show()
-
-
-def plot_penalties_comparison(results: Dict[str, Dict[str, Any]], filename: str = None):
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
-
-    layouts = []
-    penalties = []
-    penalty_per_char = []
-    colors = []
-
-    for layout_name, data in results.items():
-        if not data:
-            continue
-        layouts.append(LAYOUT_NAMES.get(layout_name, layout_name))
-        penalties.append(data["penalties"])
-        penalty_per_char.append(data["penalty_per_char"] * 100)  # В процентах
-        colors.append(LAYOUT_COLORS.get(layout_name, "#888888"))
-
-    # График 1: Общие штрафы
-    bars1 = ax1.bar(layouts, penalties, color=colors, alpha=0.7)
-    ax1.set_xlabel('Раскладка', fontsize=12)
-    ax1.set_ylabel('Общее количество штрафов', fontsize=12)
-    ax1.set_title('Штрафы за смещение пальцев', fontsize=13, fontweight='bold')
-    ax1.tick_params(axis='x', rotation=45)
-    ax1.grid(True, alpha=0.3)
-
-    for bar in bars1:
-        height = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width() / 2., height + max(penalties) * 0.01,
-                 f'{int(height)}', ha='center', va='bottom', fontsize=9)
-
-    # График 2: Штрафы на символ
-    bars2 = ax2.bar(layouts, penalty_per_char, color=colors, alpha=0.7)
-    ax2.set_xlabel('Раскладка', fontsize=12)
-    ax2.set_ylabel('Штрафов на 100 символов (%)', fontsize=12)
-    ax2.set_title('Относительные штрафы (на символ)', fontsize=13, fontweight='bold')
-    ax2.tick_params(axis='x', rotation=45)
-    ax2.grid(True, alpha=0.3)
-
-    for bar in bars2:
-        height = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width() / 2., height + max(penalty_per_char) * 0.01,
-                 f'{height:.2f}', ha='center', va='bottom', fontsize=9)
-
-    plt.tight_layout()
-    if filename:
-        plt.savefig(filename, dpi=300, bbox_inches='tight')
-        print(f"График штрафов сохранён как {filename}")
-    plt.show()
-
-
-def plot_convenient_rolls_comparison(results: Dict[str, Dict[str, Any]], filename: str = None):
-    """Строит график сравнения удобных переборов."""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
-
-    layouts = []
-    rolls = []
-    rolls_per_char = []
-    colors = []
-
-    for layout_name, data in results.items():
-        if not data:
-            continue
-        layouts.append(LAYOUT_NAMES.get(layout_name, layout_name))
-        rolls.append(data["convenient_rolls"])
-        rolls_per_char.append(data["rolls_per_char"] * 100)  # В процентах
-        colors.append(LAYOUT_COLORS.get(layout_name, "#888888"))
-
-    # График 1: Общие удобные переборы
-    bars1 = ax1.bar(layouts, rolls, color=colors, alpha=0.7)
-    ax1.set_xlabel('Раскладка', fontsize=12)
-    ax1.set_ylabel('Количество удобных переборов', fontsize=12)
-    ax1.set_title('Удобные переборы (последовательности)', fontsize=13, fontweight='bold')
-    ax1.tick_params(axis='x', rotation=45)
-    ax1.grid(True, alpha=0.3)
-
-    for bar in bars1:
-        height = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width() / 2., height + max(rolls) * 0.01,
-                 f'{int(height)}', ha='center', va='bottom', fontsize=9)
-
-    # График 2: Удобные переборы на символ
-    bars2 = ax2.bar(layouts, rolls_per_char, color=colors, alpha=0.7)
-    ax2.set_xlabel('Раскладка', fontsize=12)
-    ax2.set_ylabel('Переборов на 100 символов (%)', fontsize=12)
-    ax2.set_title('Относительные удобные переборы (на символ)', fontsize=13, fontweight='bold')
-    ax2.tick_params(axis='x', rotation=45)
-    ax2.grid(True, alpha=0.3)
-
-    for bar in bars2:
-        height = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width() / 2., height + max(rolls_per_char) * 0.01,
-                 f'{height:.2f}', ha='center', va='bottom', fontsize=9)
-
-    plt.tight_layout()
-    if filename:
-        plt.savefig(filename, dpi=300, bbox_inches='tight')
-        print(f"График переборов сохранён как {filename}")
-    plt.show()
-
-
-def plot_summary_radar(results: Dict[str, Dict[str, Any]], filename: str = None):
-    if len(results) < 2:
-        print("Для радиальной диаграммы нужно минимум 2 раскладки")
-        return
-
-    # Нормализуем метрики
-    metrics = ['left_percent', 'penalty_per_char', 'rolls_per_char']
-    metric_names = ['Левая рука (%)', 'Штрафы/символ', 'Переборы/символ']
-
-    # Инвертируем штрафы
-    normalized_data = {}
-    for layout_name, data in results.items():
-        if not data:
-            continue
-        # Для левой руки
-        left_score = 1 - abs(data['left_percent'] - 50) / 50
-
-        max_penalty = max(d['penalty_per_char'] for d in results.values() if d)
-        penalty_score = 1 - (data['penalty_per_char'] / max_penalty if max_penalty > 0 else 0)
-
-        max_rolls = max(d['rolls_per_char'] for d in results.values() if d)
-        rolls_score = data['rolls_per_char'] / max_rolls if max_rolls > 0 else 0
-
-        normalized_data[layout_name] = [left_score, penalty_score, rolls_score]
-
-    # Углы для осей
-    angles = np.linspace(0, 2 * np.pi, len(metrics), endpoint=False).tolist()
-    angles += angles[:1]  # Замыкаем круг
-
-    fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(projection='polar'))
-
-    for layout_name, scores in normalized_data.items():
-        values = scores + scores[:1]  # Замыкаем круг
-        ax.plot(angles, values, 'o-', linewidth=2,
-                label=LAYOUT_NAMES.get(layout_name, layout_name),
-                color=LAYOUT_COLORS.get(layout_name, "#888888"))
-        ax.fill(angles, values, alpha=0.1, color=LAYOUT_COLORS.get(layout_name, "#888888"))
-
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(metric_names, fontsize=12)
-    ax.set_ylim(0, 1)
-    ax.set_title('Сравнительный анализ раскладок (нормализованные метрики)\n',
-                 fontsize=14, fontweight='bold', pad=20)
-    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0))
-    ax.grid(True)
-
-    plt.tight_layout()
-    if filename:
-        plt.savefig(filename, dpi=300, bbox_inches='tight')
-        print(f"Радиальная диаграмма сохранена как {filename}")
-    plt.show()
-
-
-def print_statistics_table(results: Dict[str, Dict[str, Any]], text_name: str = ""):
-    print(f"\n{'=' * 80}")
-    print(f"СТАТИСТИКА РАСКЛАДОК {text_name}")
-    print('=' * 80)
-
-    headers = ["Раскладка", "Левая рука", "Правая рука", "Двуеручие", "Штрафы", "Штраф/симв", "Переборы", "Пер/симв"]
-    print(
-        f"{headers[0]:<20} {headers[1]:<10} {headers[2]:<10} {headers[3]:<10} {headers[4]:<8} {headers[5]:<10} {headers[6]:<10} {headers[7]:<10}")
-    print("-" * 100)
-
-    for layout_name, data in results.items():
-        if not data:
-            continue
-
-        print(f"{LAYOUT_NAMES.get(layout_name, layout_name):<20} "
-              f"{data['left_percent']:<10.1f} "
-              f"{data['right_percent']:<10.1f} "
-              f"{data['both_hands_percent']:<10.1f} "
-              f"{data['penalties']:<8.0f} "
-              f"{data['penalty_per_char'] * 100:<10.2f} "
-              f"{data['convenient_rolls']:<10.0f} "
-              f"{data['rolls_per_char'] * 100:<10.2f}")
-
-    print('=' * 80)
-
-
-def compare_layouts_interactive():
-    print("=" * 60)
-    print("СРАВНЕНИЕ РАСКЛАДОК КЛАВИАТУР")
-    print("=" * 60)
-
-    # Загружаем тексты
-    texts = load_text_files()
-
-    if not any(texts.values()):
-        print("Нет доступных текстов для анализа!")
-        return
-
-    # Выбор текста
-    print("\nДоступные тексты:")
-    text_options = []
-    for i, (name, content) in enumerate(texts.items(), 1):
-        if content:
-            text_options.append(name)
-            print(f"{i}. {name} ({len(content):,} символов)")
-
-    if not text_options:
-        print("Нет текстов для анализа!")
-        return
-
-    try:
-        choice = int(input(f"\nВыберите текст (1-{len(text_options)}): ")) - 1
-        if 0 <= choice < len(text_options):
-            text_name = text_options[choice]
-            text = texts[text_name]
-        else:
-            print("Неверный выбор, используем первый доступный текст")
-            text_name = text_options[0]
-            text = texts[text_name]
-    except:
-        print("Неверный ввод, используем первый доступный текст")
-        text_name = text_options[0]
-        text = texts[text_name]
-
-    print(f"\nВыбран текст: {text_name} ({len(text):,} символов)")
-
-    print("\nДоступные раскладки:")
-    all_layouts = list(LAYOUT_NAMES.keys())
-    for i, layout in enumerate(all_layouts, 1):
-        print(f"{i}. {LAYOUT_NAMES[layout]}")
-    print(f"{len(all_layouts) + 1}. Все раскладки")
-
-    selected_layouts = []
-    try:
-        choices = input("\nВыберите раскладки через запятую (например: 1,3,5) или 'все': ").strip()
-        if choices.lower() == 'все':
-            selected_layouts = all_layouts
-        else:
-            indices = [int(x.strip()) - 1 for x in choices.split(',')]
-            selected_layouts = [all_layouts[i] for i in indices if 0 <= i < len(all_layouts)]
-    except:
-        print("Неверный ввод, используем все раскладки")
-        selected_layouts = all_layouts
-
-    if not selected_layouts:
-        selected_layouts = all_layouts
-
-    print(f"\nСравниваем раскладки: {', '.join([LAYOUT_NAMES[l] for l in selected_layouts])}")
-
-    print("\n" + "=" * 60)
-    print("АНАЛИЗ ТЕКСТА...")
-    print("=" * 60)
-
-    results = {}
-    for layout_name in selected_layouts:
-        print(f"Анализ {LAYOUT_NAMES[layout_name]}...", end=' ', flush=True)
-        results[layout_name] = analyze_text(text, layout_name)
-        print("✓")
-
-    print_statistics_table(results, f"({text_name})")
-
-    print("\n" + "=" * 60)
-    print("СОЗДАНИЕ ГРАФИКОВ...")
-    print("=" * 60)
-
-    os.makedirs("графики", exist_ok=True)
-    base_filename = f"графики/{text_name}_"
-
-    # 1. Нагрузка на пальцы
-    print("1. График нагрузки на пальцы...")
-    plot_finger_load_comparison(results, base_filename + "нагрузка.png")
-
-    # 2. Круговые диаграммы для рук
-    print("2. Круговые диаграммы распределения нагрузки...")
-    plot_hand_distribution_pie(results, base_filename + "руки.png")
-
-    # 3. Штрафы
-    print("3. График сравнения штрафов...")
-    plot_penalties_comparison(results, base_filename + "штрафы.png")
-
-    # 4. Удобные переборы
-    print("4. График удобных переборов...")
-    plot_convenient_rolls_comparison(results, base_filename + "переборы.png")
-
-    # 5. Радиальная диаграмма
-    if len(results) >= 2:
-        print("5. Радиальная диаграмма сравнения...")
-        plot_summary_radar(results, base_filename + "радар.png")
-
-    print("\n" + "=" * 60)
-    print("АНАЛИЗ ЗАВЕРШЁН!")
-    print(f"Графики сохранены в папке 'графики/'")
-    print("=" * 60)
-
-
-def main():
+            print(f"Ошибка загрузки файла {filename}: {e}")
+            return False
+
+    def analyze_all_layouts(self):
+        if not self.current_text:
+            print("Сначала загрузите текст!")
+            return
+
+        self.results = {}
+
+        for layout_name, layout_funcs in self.layouts.items():
+            print(f"Анализ раскладки: {layout_name}")
+
+            finger_load = layout_funcs["load_func"](self.current_text)
+            total_load = sum(finger_load)
+
+            penalties = layout_funcs["penalty_func"](self.current_text)
+
+            left_load = sum(finger_load[:5])
+            right_load = sum(finger_load[5:])
+            total = left_load + right_load
+            left_percent = int((left_load * 100) / total) if total > 0 else 0
+            right_percent = int((right_load * 100) / total) if total > 0 else 0
+            both_percent = 0
+
+            roll_result = layout_funcs["roll_analyzer"](self.current_text)
+            totals = roll_result["total"]
+            grand_total = sum(totals.values())
+
+            left_rolls = {2: 0, 3: 0, 4: 0, 5: 0}
+            right_rolls = {2: 0, 3: 0, 4: 0, 5: 0}
+
+            for length in [2, 3, 4, 5]:
+                if length in roll_result["by_length"]:
+                    stats = roll_result["by_length"][length]
+                    total_this_length = sum(stats.values())
+                    if total_this_length > 0:
+                        left_rolls[length] = stats['convenient'] // 2
+                        right_rolls[length] = stats['convenient'] - left_rolls[length]
+
+            self.results[layout_name] = {
+                "finger_load": finger_load,
+                "total_load": total_load,
+                "penalties": penalties,
+                "left_percent": left_percent,
+                "right_percent": right_percent,
+                "both_percent": both_percent,
+                "roll_stats": roll_result,
+                "left_rolls": left_rolls,
+                "right_rolls": right_rolls,
+                "color": layout_funcs["color"]
+            }
+
+        return self.results
+
+    def plot_finger_load_comparison(self, selected_layouts=None):
+        if not self.results:
+            print("Сначала выполните анализ!")
+            return
+
+        if selected_layouts is None:
+            selected_layouts = list(self.layouts.keys())
+
+        fig, axes = plt.subplots(2, 1, figsize=(14, 10))
+
+        ax1 = axes[0]
+        x = np.arange(len(self.finger_short))
+        width = 0.12
+
+        for i, layout_name in enumerate(selected_layouts):
+            if layout_name in self.results:
+                load = self.results[layout_name]["finger_load"]
+                normalized_load = [l / max(load) * 100 if max(load) > 0 else 0 for l in load]
+                ax1.bar(x + i * width - width * len(selected_layouts) / 2 + width / 2,
+                        normalized_load, width,
+                        label=LAYOUT_NAMES_RU[layout_name],
+                        color=self.results[layout_name]["color"])
+
+        ax1.set_xlabel('Пальцы')
+        ax1.set_ylabel('Нагрузка (%)')
+        ax1.set_title(f'Сравнение нагрузки на пальцы\nТекст: {self.text_name}')
+        ax1.set_xticks(x)
+        ax1.set_xticklabels(self.finger_short, rotation=45)
+        ax1.legend(loc='upper right', ncol=2)
+        ax1.grid(True, alpha=0.3)
+
+        ax2 = axes[1]
+        layout_names = []
+        penalties = []
+        colors = []
+
+        for layout_name in selected_layouts:
+            if layout_name in self.results:
+                layout_names.append(LAYOUT_NAMES_RU[layout_name])
+                penalties.append(self.results[layout_name]["penalties"])
+                colors.append(self.results[layout_name]["color"])
+
+        bars = ax2.bar(layout_names, penalties, color=colors)
+        ax2.set_xlabel('Раскладка')
+        ax2.set_ylabel('Штрафы')
+        ax2.set_title('Сравнение штрафов за смещение от домашнего ряда')
+        ax2.grid(True, alpha=0.3)
+
+        for bar, penalty in zip(bars, penalties):
+            height = bar.get_height()
+            ax2.text(bar.get_x() + bar.get_width() / 2., height + 0.1,
+                     f'{penalty}', ha='center', va='bottom')
+
+        plt.tight_layout()
+        plt.show()
+
+    def plot_hand_distribution(self, selected_layouts=None):
+        if not self.results:
+            print("Сначала выполните анализ!")
+            return
+
+        if selected_layouts is None:
+            selected_layouts = list(self.layouts.keys())
+
+        n_layouts = len(selected_layouts)
+        n_cols = min(3, n_layouts)
+        n_rows = (n_layouts + n_cols - 1) // n_cols
+
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 4 * n_rows))
+        if n_layouts == 1:
+            axes = np.array([axes])
+        if n_rows == 1 and n_cols > 1:
+            axes = axes.reshape(1, -1)
+
+        for idx, layout_name in enumerate(selected_layouts):
+            if layout_name in self.results:
+                row = idx // n_cols
+                col = idx % n_cols
+                ax = axes[row, col] if n_rows > 1 or n_cols > 1 else axes[idx]
+
+                left_percent = self.results[layout_name]["left_percent"]
+                right_percent = self.results[layout_name]["right_percent"]
+                both_percent = 100 - left_percent - right_percent
+
+                sizes = [left_percent, right_percent, both_percent]
+                labels = ['Левая', 'Правая', 'Обе руки']
+                colors = ['#FF6B6B', '#4ECDC4', '#95E1D3']
+
+                wedges, texts, autotexts = ax.pie(sizes, labels=labels, colors=colors,
+                                                  autopct='%1.1f%%', startangle=90)
+
+                ax.set_title(f'{LAYOUT_NAMES_RU[layout_name]}\nРаспределение нагрузки',
+                             fontsize=10)
+
+                for text in texts + autotexts:
+                    text.set_fontsize(9)
+
+        for idx in range(n_layouts, n_rows * n_cols):
+            row = idx // n_cols
+            col = idx % n_cols
+            axes[row, col].axis('off')
+
+        plt.suptitle(f'Распределение нагрузки на руки\nТекст: {self.text_name}', fontsize=14)
+        plt.tight_layout()
+        plt.show()
+
+    def plot_rolls_comparison(self, selected_layouts=None):
+        if not self.results:
+            print("Сначала выполните анализ!")
+            return
+
+        if selected_layouts is None:
+            selected_layouts = list(self.layouts.keys())
+
+        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        axes = axes.flatten()
+
+        lengths = [2, 3]
+        titles = [
+            'Удобные переборы (левая рука)',
+            'Удобные переборы (правая рука)',
+            'Все удобные последовательности',
+            'Частично удобные и неудобные (2 символа)'
+        ]
+
+        for plot_idx in range(4):
+            ax = axes[plot_idx]
+            x = np.arange(len(lengths)) if plot_idx != 3 else np.arange(2)
+            width = 0.15
+
+            for i, layout_name in enumerate(selected_layouts):
+                if layout_name in self.results:
+                    stats = self.results[layout_name]["roll_stats"]
+                    color = self.results[layout_name]["color"]
+
+                    if plot_idx == 0:
+                        values = [self.results[layout_name]["left_rolls"][l] for l in lengths]
+                        x_pos = x
+                    elif plot_idx == 1:
+                        values = [self.results[layout_name]["right_rolls"][l] for l in lengths]
+                        x_pos = x
+                    elif plot_idx == 2:
+                        values = [stats["by_length"][l]["convenient"] for l in lengths]
+                        x_pos = x
+                    else:
+                        values = [
+                            stats["by_length"][2]["semi"],
+                            stats["by_length"][2]["inconvenient"]
+                        ]
+                        x_pos = np.arange(2)
+
+                    ax.bar(x_pos + i * width - width * len(selected_layouts) / 2 + width / 2,
+                           values, width, label=LAYOUT_NAMES_RU[layout_name],
+                           color=color, alpha=0.8)
+
+            ax.set_xlabel('Длина последовательности' if plot_idx != 3 else 'Тип последовательности')
+            ax.set_ylabel('Количество')
+            ax.set_title(titles[plot_idx])
+
+            if plot_idx != 3:
+                ax.set_xticks(x)
+                ax.set_xticklabels([f'{l} симв.' for l in lengths])
+            else:
+                ax.set_xticks([0, 1])
+                ax.set_xticklabels(['Частично\nудобные', 'Неудобные'])
+
+            ax.grid(True, alpha=0.3)
+
+            if plot_idx == 0:
+                ax.legend(loc='upper left', fontsize=8)
+
+        plt.suptitle(f'Анализ переборов по раскладкам\nТекст: {self.text_name}', fontsize=14)
+        plt.tight_layout()
+        plt.show()
+
+    def plot_overall_convenience(self, selected_layouts=None):
+        if not self.results:
+            print("Сначала выполните анализ!")
+            return
+
+        if selected_layouts is None:
+            selected_layouts = list(self.layouts.keys())
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        categories = ['Удобные', 'Частично удобные', 'Неудобные']
+        x = np.arange(len(categories))
+        width = 0.12
+
+        for i, layout_name in enumerate(selected_layouts):
+            if layout_name in self.results:
+                stats = self.results[layout_name]["roll_stats"]["total"]
+                values = [stats['convenient'], stats['semi'], stats['inconvenient']]
+
+                ax.bar(x + i * width - width * len(selected_layouts) / 2 + width / 2,
+                       values, width, label=LAYOUT_NAMES_RU[layout_name],
+                       color=self.results[layout_name]["color"], alpha=0.8)
+
+        ax.set_xlabel('Категория удобства')
+        ax.set_ylabel('Количество последовательностей')
+        ax.set_title(f'Распределение нажатий по удобству\nТекст: {self.text_name}')
+        ax.set_xticks(x)
+        ax.set_xticklabels(categories)
+        ax.legend(loc='upper right')
+        ax.grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        plt.show()
+
+    def plot_individual_finger_load(self, layout_name):
+        if layout_name not in self.results:
+            print(f"Раскладка {layout_name} не найдена в результатах!")
+            return
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+        load = self.results[layout_name]["finger_load"]
+        total = sum(load)
+        percentages = [l / total * 100 if total > 0 else 0 for l in load]
+
+        bars = ax1.bar(self.finger_short, percentages,
+                       color=['#FF9999', '#FFB366', '#FFFF66', '#99FF99', '#66B3FF',
+                              '#66B3FF', '#99FF99', '#FFFF66', '#FFB366', '#FF9999'])
+
+        ax1.set_xlabel('Пальцы')
+        ax1.set_ylabel('Нагрузка (%)')
+        ax1.set_title(f'Нагрузка на пальцы - {LAYOUT_NAMES_RU[layout_name]}\nТекст: {self.text_name}')
+        ax1.grid(True, alpha=0.3)
+
+        for bar, percentage in zip(bars, percentages):
+            height = bar.get_height()
+            ax1.text(bar.get_x() + bar.get_width() / 2., height + 0.5,
+                     f'{percentage:.1f}%', ha='center', va='bottom', fontsize=9)
+
+        wedges, texts, autotexts = ax2.pie(percentages, labels=self.finger_short,
+                                           autopct='%1.1f%%', startangle=90)
+        ax2.set_title(f'Распределение нагрузки\n{LAYOUT_NAMES_RU[layout_name]}')
+
+        plt.tight_layout()
+        plt.show()
+
+    def print_statistics(self, selected_layouts=None):
+        if not self.results:
+            print("Сначала выполните анализ!")
+            return
+
+        if selected_layouts is None:
+            selected_layouts = list(self.layouts.keys())
+
+        print("\n" + "=" * 80)
+        print(f"СТАТИСТИКА АНАЛИЗА РАСКЛАДОК")
+        print(f"Текст: {self.text_name}")
+        print("=" * 80)
+
+        for layout_name in selected_layouts:
+            if layout_name in self.results:
+                data = self.results[layout_name]
+                print(f"\n{LAYOUT_NAMES_RU[layout_name]}:")
+                print(f"  Общая нагрузка: {data['total_load']} нажатий")
+                print(f"  Штрафы: {data['penalties']}")
+                print(f"  Нагрузка на руки: Левая {data['left_percent']}%, Правая {data['right_percent']}%")
+
+                rolls = data['roll_stats']['total']
+                total_rolls = sum(rolls.values())
+                if total_rolls > 0:
+                    print(
+                        f"  Переборы: Удобные {rolls['convenient']} ({rolls['convenient'] / total_rolls * 100:.1f}%), "
+                        f"Частично {rolls['semi']} ({rolls['semi'] / total_rolls * 100:.1f}%), "
+                        f"Неудобные {rolls['inconvenient']} ({rolls['inconvenient'] / total_rolls * 100:.1f}%)")
+                else:
+                    print(f"  Переборы: нет данных")
+
+
+def main_menu():
+    analyzer = KeyboardAnalyzer()
+
     while True:
         print("\n" + "=" * 60)
-        print("СРАВНЕНИЕ РАСКЛАДОК КЛАВИАТУР")
+        print("АНАЛИЗАТОР РАСКЛАДОК КЛАВИАТУР")
         print("=" * 60)
-        print("ГЛАВНОЕ МЕНЮ")
-        print("=" * 60)
-        print("1. Сравнить раскладки на одном тексте")
-        print("2. Выйти")
-        print("-" * 60)
+        print("\n1. Загрузить текст для анализа")
+        print("2. Выполнить анализ всех раскладок")
+        print("3. Сравнить выбранные раскладки")
+        print("4. Показать все графики")
+        print("5. Индивидуальный анализ раскладки")
+        print("6. Вывести статистику")
+        print("0. Выход")
 
-        choice = input("Выберите действие (1-2): ").strip()
+        choice = input("\nВыберите действие (0-6): ").strip()
 
-        if choice == "1":
-            compare_layouts_interactive()
-        elif choice == "2":
+        if choice == "0":
             print("До свидания!")
             break
+
+        elif choice == "1":
+            print("\nДоступные файлы:")
+            for i, (filename, desc) in enumerate(TEXT_FILES.items(), 1):
+                print(f"{i}. {desc} ({filename})")
+
+            file_choice = input("\nВыберите файл (1-3): ").strip()
+            if file_choice in ["1", "2", "3"]:
+                filename = list(TEXT_FILES.keys())[int(file_choice) - 1]
+                if analyzer.load_and_process(filename):
+                    print(f"✓ Текст '{TEXT_FILES[filename]}' загружен и обработан")
+                else:
+                    print("✗ Ошибка загрузки файла")
+            else:
+                print("Неверный выбор")
+
+        elif choice == "2":
+            if not analyzer.current_text:
+                print("Сначала загрузите текст!")
+                continue
+
+            print("Выполняется анализ всех раскладок...")
+            analyzer.analyze_all_layouts()
+            print("✓ Анализ завершен")
+
+        elif choice == "3":
+            if not analyzer.results:
+                print("Сначала выполните анализ!")
+                continue
+
+            print("\nДоступные раскладки:")
+            for i, layout_name in enumerate(LAYOUT_NAMES_RU.keys(), 1):
+                print(f"{i}. {LAYOUT_NAMES_RU[layout_name]}")
+
+            print("\nВведите номера раскладок для сравнения (через пробел):")
+            print("Пример: 1 3 5 или 'all' для всех")
+
+            selection = input("Ваш выбор: ").strip()
+
+            if selection.lower() == 'all':
+                selected_layouts = list(LAYOUT_NAMES_RU.keys())
+            else:
+                try:
+                    indices = [int(x) - 1 for x in selection.split()]
+                    selected_layouts = [list(LAYOUT_NAMES_RU.keys())[i] for i in indices]
+                except:
+                    print("Неверный формат ввода")
+                    continue
+
+            print("\nГенерация графиков сравнения...")
+            analyzer.plot_finger_load_comparison(selected_layouts)
+            analyzer.plot_hand_distribution(selected_layouts)
+            analyzer.plot_rolls_comparison(selected_layouts)
+            analyzer.plot_overall_convenience(selected_layouts)
+
+        elif choice == "4":
+            if not analyzer.results:
+                print("Сначала выполните анализ!")
+                continue
+
+            print("Генерация всех графиков...")
+            analyzer.plot_finger_load_comparison()
+            analyzer.plot_hand_distribution()
+            analyzer.plot_rolls_comparison()
+            analyzer.plot_overall_convenience()
+
+        elif choice == "5":
+            if not analyzer.results:
+                print("Сначала выполните анализ!")
+                continue
+
+            print("\nДоступные раскладки:")
+            for i, layout_name in enumerate(LAYOUT_NAMES_RU.keys(), 1):
+                print(f"{i}. {LAYOUT_NAMES_RU[layout_name]}")
+
+            layout_choice = input("\nВыберите раскладку (1-7): ").strip()
+            if layout_choice in [str(i) for i in range(1, 8)]:
+                layout_name = list(LAYOUT_NAMES_RU.keys())[int(layout_choice) - 1]
+                analyzer.plot_individual_finger_load(layout_name)
+            else:
+                print("Неверный выбор")
+
+        elif choice == "6":
+            if not analyzer.results:
+                print("Сначала выполните анализ!")
+                continue
+            analyzer.print_statistics()
+
         else:
             print("Неверный выбор. Попробуйте снова.")
-
-        input("\nНажмите Enter чтобы продолжить...")
 
 
 if __name__ == "__main__":
     plt.style.use('seaborn-v0_8-darkgrid')
-    plt.rcParams['font.family'] = 'DejaVu Sans'  # Для поддержки кириллицы
-    plt.rcParams['axes.unicode_minus'] = False
+    mpl.rcParams['font.family'] = 'DejaVu Sans'
+    mpl.rcParams['font.size'] = 10
+    mpl.rcParams['figure.titlesize'] = 12
+    mpl.rcParams['axes.titlesize'] = 11
 
-    main()
+    main_menu()
